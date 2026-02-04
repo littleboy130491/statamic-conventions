@@ -8,6 +8,7 @@ This document provides instructions for converting static HTML files into dynami
 2. Checking available blueprint fields
 3. Updating the `.md` entry file with extracted values
 4. Creating `.antlers.html` template with variables wrapped in conditionals
+5. Using Antlers tags (nav, form, collection, etc.) instead of hardcoded HTML
 
 > ⚠️ **PREREQUISITE:** Before converting, check `resources/sites.yaml` to detect if the project is single-site or multisite. Entry file paths differ between configurations.
 
@@ -38,6 +39,7 @@ START: HTML to Antlers Conversion
 │  └─ Location: resources/views/{collection}/{template}.antlers.html
 │  └─ Replace hardcoded HTML with variables
 │  └─ WRAP ALL VARIABLES with {{ if }} conditionals
+│  └─ USE ANTLERS TAGS (nav, form, collection, svg, etc.) instead of raw HTML
 │
 └─ STEP 6: Verify and report
    └─ List fields used, fields missing, suggested blueprint additions
@@ -120,7 +122,176 @@ When converting `<img>` HTML elements to Antlers, **always use the `glide` tag**
 
 ---
 
-### Rule 4: Update Entry File with HTML Content
+### Rule 4: Use Antlers Tags Instead of Raw HTML
+
+When converting HTML, **always use Antlers tags** for dynamic functionality instead of hardcoding HTML. Statamic provides built-in tags for common patterns.
+
+> **Reference:** Full documentation at [https://statamic.dev/tags/all-tags](https://statamic.dev/tags/all-tags)
+
+#### Navigation — Use `{{ nav }}` tag
+
+```antlers
+{{-- ❌ WRONG: Hardcoded navigation --}}
+<nav>
+  <a href="/">Home</a>
+  <a href="/about">About</a>
+  <a href="/contact">Contact</a>
+</nav>
+
+{{-- ✅ CORRECT: Use nav tag --}}
+<nav>
+  {{ nav:main }}
+    <a href="{{ url }}" {{ if is_current }}class="active"{{ /if }}>{{ title }}</a>
+  {{ /nav:main }}
+</nav>
+```
+
+#### Breadcrumbs — Use `{{ nav:breadcrumbs }}` tag
+
+```antlers
+{{-- ❌ WRONG: Hardcoded breadcrumbs --}}
+<nav class="breadcrumbs">
+  <a href="/">Home</a> / <a href="/services">Services</a> / <span>Web Design</span>
+</nav>
+
+{{-- ✅ CORRECT: Use breadcrumbs tag --}}
+<nav class="breadcrumbs">
+  {{ nav:breadcrumbs }}
+    {{ if is_current }}
+      <span>{{ title }}</span>
+    {{ else }}
+      <a href="{{ url }}">{{ title }}</a>
+    {{ /if }}
+    {{ unless is_current }} / {{ /unless }}
+  {{ /nav:breadcrumbs }}
+</nav>
+```
+
+#### Forms — Use `{{ form }}` tag
+
+```antlers
+{{-- ❌ WRONG: Raw HTML form --}}
+<form action="/contact" method="POST">
+  <input type="text" name="name" placeholder="Name">
+  <input type="email" name="email" placeholder="Email">
+  <textarea name="message"></textarea>
+  <button type="submit">Send</button>
+</form>
+
+{{-- ✅ CORRECT: Use form tag --}}
+{{ form:contact }}
+  {{ if errors }}
+    <div class="alert alert-error">
+      {{ errors }}{{ value }}{{ /errors }}
+    </div>
+  {{ /if }}
+  {{ if success }}
+    <div class="alert alert-success">{{ success }}</div>
+  {{ else }}
+    <input type="text" name="name" placeholder="Name" value="{{ old:name }}">
+    <input type="email" name="email" placeholder="Email" value="{{ old:email }}">
+    <textarea name="message">{{ old:message }}</textarea>
+    <button type="submit">Send</button>
+  {{ /if }}
+{{ /form:contact }}
+```
+
+#### SVG Icons — Use `{{ svg }}` tag
+
+```antlers
+{{-- ❌ WRONG: Inline SVG or img tag --}}
+<img src="/icons/arrow.svg" alt="">
+
+{{-- ✅ CORRECT: Use svg tag for inline SVGs --}}
+{{ svg src="icons/arrow" class="icon" }}
+```
+
+#### Collection Listings — Use `{{ collection }}` tag
+
+```antlers
+{{-- ❌ WRONG: Hardcoded article list --}}
+<div class="posts">
+  <article><h2>Post 1</h2></article>
+  <article><h2>Post 2</h2></article>
+</div>
+
+{{-- ✅ CORRECT: Use collection tag --}}
+<div class="posts">
+  {{ collection:posts limit="10" sort="date:desc" }}
+    <article>
+      <a href="{{ url }}"><h2>{{ title }}</h2></a>
+      {{ if excerpt }}<p>{{ excerpt }}</p>{{ /if }}
+    </article>
+  {{ /collection:posts }}
+</div>
+```
+
+#### Asset URLs — Use `{{ asset }}` or `{{ assets }}` tags
+
+```antlers
+{{-- ❌ WRONG: Hardcoded asset path --}}
+<a href="/downloads/brochure.pdf">Download Brochure</a>
+
+{{-- ✅ CORRECT: Use asset tag --}}
+{{ asset url="/downloads/brochure.pdf" }}
+  <a href="{{ url }}">Download {{ title }} ({{ size }})</a>
+{{ /asset }}
+```
+
+#### Reusable Components — Use `{{ partial }}` tag
+
+```antlers
+{{-- ❌ WRONG: Duplicated HTML across templates --}}
+<div class="card">
+  <img src="..."><h3>...</h3><p>...</p>
+</div>
+
+{{-- ✅ CORRECT: Extract to partial --}}
+{{ partial:components/card :title="title" :image="image" :description="description" }}
+```
+
+#### Login/Auth Forms — Use user form tags
+
+```antlers
+{{-- ❌ WRONG: Raw login form --}}
+<form action="/login" method="POST">
+  <input type="email" name="email">
+  <input type="password" name="password">
+  <button>Login</button>
+</form>
+
+{{-- ✅ CORRECT: Use login form tag --}}
+{{ user:login_form }}
+  {{ if errors }}<div class="error">{{ errors }}{{ value }}{{ /errors }}</div>{{ /if }}
+  <input type="email" name="email" value="{{ old:email }}">
+  <input type="password" name="password">
+  <button>Login</button>
+{{ /user:login_form }}
+```
+
+#### Common Antlers Tags Reference
+
+| HTML Pattern | Use Antlers Tag |
+|--------------|-----------------|
+| Navigation menu | `{{ nav:handle }}` |
+| Breadcrumbs | `{{ nav:breadcrumbs }}` |
+| Contact/any form | `{{ form:handle }}` |
+| Blog/post listings | `{{ collection:handle }}` |
+| Category/tag lists | `{{ taxonomy:handle }}` |
+| SVG icons | `{{ svg src="..." }}` |
+| File downloads | `{{ asset }}` or `{{ assets }}` |
+| Login form | `{{ user:login_form }}` |
+| Register form | `{{ user:register_form }}` |
+| Profile form | `{{ user:profile_form }}` |
+| Reusable HTML blocks | `{{ partial:path/name }}` |
+| Search form | `{{ search:form }}` |
+| Search results | `{{ search:results }}` |
+| Pagination | `{{ paginate }}` |
+| Cache expensive blocks | `{{ cache }}...{{ /cache }}` |
+
+---
+
+### Rule 5: Update Entry File with HTML Content
 
 Extract values from HTML and populate the entry `.md` file:
 
@@ -712,7 +883,7 @@ After conversion, provide a summary:
 
 ---
 
-## Step 6: Antlers Syntax Reference
+## Step 7: Antlers Syntax Reference
 
 ### Basic Variables
 
@@ -1729,6 +1900,7 @@ Some content should remain hardcoded (not editable):
 - [ ] Used correct Antlers syntax for each field type
 - [ ] Added fallback values where appropriate
 - [ ] Wrapped sections with conditionals (show only if has content)
+- [ ] **Used Antlers tags** (nav, form, collection, svg, etc.) instead of raw HTML
 
 ### Verification
 - [ ] Template renders without errors
@@ -1816,6 +1988,7 @@ Some content should remain hardcoded (not editable):
    └─ Replace HTML with Antlers variables
    └─ WRAP EVERYTHING with {{ if }} conditionals
    └─ Use fallbacks where needed
+   └─ USE ANTLERS TAGS (nav, form, collection, etc.) not raw HTML
 
 5. REPORT
    └─ List fields used
