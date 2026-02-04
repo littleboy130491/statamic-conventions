@@ -80,7 +80,47 @@ cat resources/blueprints/collections/{collection}/{blueprint}.yaml
 
 **Exception:** Fields marked as `required` in blueprint can skip conditionals if guaranteed to have value.
 
-### Rule 3: Update Entry File with HTML Content
+### Rule 3: Always Use Glide for Image Tags
+
+When converting `<img>` HTML elements to Antlers, **always use the `glide` tag** for responsive image optimization:
+
+```antlers
+{{-- ❌ WRONG: Bare image URL without optimization --}}
+{{ if hero_image }}<img src="{{ hero_image:url }}">{{ /if }}
+
+{{-- ✅ CORRECT: Use glide for optimization --}}
+{{ if hero_image }}<img src="{{ glide:hero_image width='800' height='600' fit='crop' }}" alt="{{ hero_image:alt }}">{{ /if }}
+```
+
+**Why use glide:**
+- Responsive image sizing
+- Automatic format optimization (WebP fallbacks)
+- Smart cropping and fitting
+- Lazy loading support
+- CDN-friendly image delivery
+
+**Common glide parameters:**
+- `width` — Image width in pixels
+- `height` — Image height in pixels
+- `fit` — How to fit image: `crop`, `max`, `stretch`, `contain`
+- `quality` — JPEG quality (1-100, default 90)
+- `format` — Output format: `jpg`, `png`, `webp`, etc.
+
+**Examples:**
+```antlers
+{{-- Responsive hero image --}}
+{{ glide:hero_image width='1200' height='400' fit='crop' quality='85' }}
+
+{{-- Thumbnail --}}
+{{ glide:image width='200' height='200' fit='crop' }}
+
+{{-- Full-width responsive --}}
+{{ glide:image width='100%' height='auto' fit='max' }}
+```
+
+---
+
+### Rule 4: Update Entry File with HTML Content
 
 Extract values from HTML and populate the entry `.md` file:
 
@@ -428,21 +468,19 @@ resources/views/{collection}/{template}.antlers.html
 #### Asset Fields
 
 ```antlers
-{{-- Single image --}}
+{{-- Single image (with glide optimization) --}}
 {{ if hero_image }}
-  <img 
-    src="{{ hero_image:url }}" 
+  <img
+    src="{{ glide:hero_image width='800' height='600' fit='crop' }}"
     alt="{{ hero_image:alt ?? title }}"
-    {{ if hero_image:width }}width="{{ hero_image:width }}"{{ /if }}
-    {{ if hero_image:height }}height="{{ hero_image:height }}"{{ /if }}
   >
 {{ /if }}
 
-{{-- Image gallery --}}
+{{-- Image gallery (with glide optimization) --}}
 {{ if gallery }}
   <div class="gallery">
     {{ gallery }}
-      <img src="{{ url }}" alt="{{ alt }}">
+      <img src="{{ glide:url width='400' height='300' fit='crop' }}" alt="{{ alt }}">
     {{ /gallery }}
   </div>
 {{ /if }}
@@ -478,7 +516,7 @@ resources/views/{collection}/{template}.antlers.html
       {{ if type == 'feature' }}
         <div class="feature">
           {{ if icon }}
-            <img src="{{ icon:url }}" alt="" class="feature-icon">
+            <img src="{{ glide:icon width='64' height='64' fit='max' }}" alt="" class="feature-icon">
           {{ /if }}
           {{ if title }}<h3>{{ title }}</h3>{{ /if }}
           {{ if description }}<p>{{ description }}</p>{{ /if }}
@@ -508,7 +546,7 @@ resources/views/{collection}/{template}.antlers.html
       {{ elseif type == 'image' }}
         {{ if image }}
           <figure>
-            <img src="{{ image:url }}" alt="{{ image:alt }}">
+            <img src="{{ glide:image width='600' height='400' fit='crop' }}" alt="{{ image:alt }}">
             {{ if caption }}<figcaption>{{ caption }}</figcaption>{{ /if }}
           </figure>
         {{ /if }}
@@ -534,7 +572,7 @@ resources/views/{collection}/{template}.antlers.html
     {{ team_members }}
       <div class="team-member">
         {{ if photo }}
-          <img src="{{ photo:url }}" alt="{{ name }}">
+          <img src="{{ glide:photo width='300' height='300' fit='crop' }}" alt="{{ name }}">
         {{ /if }}
         {{ if name }}<h3>{{ name }}</h3>{{ /if }}
         {{ if role }}<p class="role">{{ role }}</p>{{ /if }}
@@ -569,8 +607,8 @@ resources/views/{collection}/{template}.antlers.html
 {{ if title || subtitle || hero_image }}
   <section class="hero">
     {{ if hero_image }}
-      <img 
-        src="{{ hero_image:url }}" 
+      <img
+        src="{{ glide:hero_image width='1200' height='500' fit='crop' }}"
         alt="{{ hero_image:alt ?? title }}"
         class="hero-image"
       >
@@ -600,7 +638,7 @@ resources/views/{collection}/{template}.antlers.html
           <div class="feature">
             {{ if icon }}
               <div class="feature-icon">
-                <img src="{{ icon:url }}" alt="">
+                <img src="{{ glide:icon width='80' height='80' fit='max' }}" alt="">
               </div>
             {{ /if }}
             {{ if title }}<h3>{{ title }}</h3>{{ /if }}
@@ -729,26 +767,23 @@ After conversion, provide a summary:
 
 ### Assets (Images, Files)
 
-**Single image:**
+**Single image (always use glide):**
 ```html
 <!-- HTML -->
 <img src="images/hero.jpg" alt="Hero Image">
 
-<!-- Antlers -->
-<img src="{{ hero_image:url }}" alt="{{ hero_image:alt }}">
-
-<!-- With additional attributes -->
-<img 
-  src="{{ hero_image:url }}"
-  alt="{{ hero_image:alt }}"
-  width="{{ hero_image:width }}"
-  height="{{ hero_image:height }}"
->
+<!-- Antlers with Glide optimization -->
+<img src="{{ glide:hero_image width='800' height='600' fit='crop' }}" alt="{{ hero_image:alt }}">
 ```
 
-**Image with Glide (resizing):**
+**Glide with multiple parameters:**
 ```antlers
-<img src="{{ glide:hero_image width='800' height='600' fit='crop' }}">
+<img src="{{ glide:hero_image width='1200' height='500' fit='crop' quality='85' }}" alt="{{ hero_image:alt }}">
+```
+
+**Responsive sizing with glide:**
+```antlers
+<img src="{{ glide:image width='100%' height='auto' fit='max' }}" alt="{{ alt }}">
 ```
 
 **Multiple images (gallery):**
@@ -888,7 +923,7 @@ sections:
 <!-- Antlers (dynamic) -->
 {{ sections }}
   {{ if type == 'hero' }}
-    <section class="hero" style="background-image: url('{{ background:url }}')">
+    <section class="hero" style="background-image: url('{{ glide:background width='1200' height='500' fit='crop' }}')">
       <h1>{{ heading }}</h1>
     </section>
   {{ elseif type == 'features' }}
@@ -1137,14 +1172,14 @@ tags:
 
 **With filtering and sorting:**
 ```antlers
-{{ collection:posts 
+{{ collection:posts
    limit="6"
    sort="date:desc"
    taxonomy:categories="news"
 }}
   <article>
     {{ if featured_image }}
-      <img src="{{ featured_image:url }}" alt="{{ title }}">
+      <img src="{{ glide:featured_image width='400' height='250' fit='crop' }}" alt="{{ title }}">
     {{ /if }}
     <h2>{{ title }}</h2>
     <p>{{ excerpt | truncate:150 }}</p>
@@ -1371,7 +1406,7 @@ team_image: images/team.jpg
       <p>{{ description }}</p>
     {{ /if }}
     {{ if team_image }}
-      <img src="{{ team_image:url }}" alt="{{ team_image:alt ?? 'Our Team' }}">
+      <img src="{{ glide:team_image width='800' height='600' fit='crop' }}" alt="{{ team_image:alt ?? 'Our Team' }}">
     {{ /if }}
   </section>
 {{ /if }}
@@ -1463,7 +1498,7 @@ content:
   </header>
   
   {{ if featured_image }}
-    <img src="{{ featured_image:url }}" alt="{{ featured_image:alt ?? title }}">
+    <img src="{{ glide:featured_image width='900' height='500' fit='crop' }}" alt="{{ featured_image:alt ?? title }}">
   {{ /if }}
   
   {{ if content }}
@@ -1585,7 +1620,7 @@ sections:
           {{ services }}
             <div class="service">
               {{ if icon }}
-                <img src="{{ icon:url }}" alt="">
+                <img src="{{ glide:icon width='100' height='100' fit='max' }}" alt="">
               {{ /if }}
               {{ if title }}<h3>{{ title }}</h3>{{ /if }}
               {{ if description }}<p>{{ description }}</p>{{ /if }}
