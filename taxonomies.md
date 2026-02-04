@@ -147,6 +147,23 @@ taxonomies:
 
 ---
 
+## Layout vs Template: Key Distinction
+
+Understanding the difference between **layouts** and **templates** is fundamental:
+
+| Aspect | Layout | Template |
+|--------|--------|----------|
+| **Purpose** | HTML shell/frame | Content-specific markup |
+| **Contains** | `<head>`, global styles, shared components | Term-specific content |
+| **Reusability** | Used by all pages | Used by taxonomy term pages |
+| **Term Data** | Minimal (globals only) | Full access to term variables |
+| **Modifies** | Rarely changed | Customized per taxonomy |
+| **Example** | `layout.antlers.html` | `categories/show.antlers.html`, `tags/show.antlers.html` |
+
+**Analogy:** Layout is the picture frame; template is the painting inside.
+
+---
+
 ## Template Resolution
 
 **Order:**
@@ -161,24 +178,68 @@ taxonomies:
 
 ---
 
+## Layout
+
+**Location:** `resources/views/layout.antlers.html` (global) or `resources/views/{taxonomy}/layout.antlers.html` (taxonomy-specific)
+
+**Purpose:** The overall HTML wrapper that serves every taxonomy page.
+
+**Contains:**
+
+1. **HTML Structure**
+   - `<!DOCTYPE html>` declaration
+   - `<html>`, `<head>`, `<body>` tags
+   - Opening and closing tags for the entire document
+
+2. **Head Section**
+   - Meta tags (charset, viewport, SEO)
+   - `<title>` tag (often from `{{ seo_pro:meta }}` or `{{ title }}`)
+   - Global stylesheets (CSS frameworks, custom CSS)
+   - Fonts and preconnects
+   - Yield hooks for page-specific head content: `{{ yield:head }}`, `{{ yield:styles }}`
+
+3. **Shared Components** (via partials or inline)
+   - Header with logo
+   - Site navigation (`{{ partial:navigation }}`)
+   - Footer with copyright, links, social icons
+   - Analytics scripts (GTM, Google Analytics)
+
+4. **Template Injection Point**
+   - `{{ template_content }}` — where templates render their content
+
+5. **Scripts Section**
+   - Global JavaScript (jQuery, Alpine.js, etc.)
+   - Yield hook for page-specific scripts: `{{ yield:scripts }}`
+
+**Key Principle:** The layout should **not** contain term-specific logic. It only knows about globals and provides hooks for customization.
+
+**Reference:** https://statamic.dev/views#layouts
+
+**Mental model:** Layout = reusable HTML frame that stays consistent across the site.
+
+---
+
 ## Term Template
 
 **Location:** `resources/views/{taxonomy}/show.antlers.html`
 
-**Purpose:** Defines how a single term page looks (listing entries with that term).
+**Purpose:** Content-specific view that displays a single term page (listing entries with that term).
+
+**Contains:**
+
+- Term-specific markup using field variables from the taxonomy blueprint
+- `{{ section:* }}` tags to inject into layout hooks
+- Entry listing loop via `{{ taxonomy:entries }}`
+
+**Accesses:**
+- Term fields (`{{ title }}`, `{{ slug }}`, `{{ content }}`, custom fields)
+- All entries with this term via `{{ taxonomy:entries }}`
+- Globals (`{{ site:name }}`, `{{ globals:handle }}`)
 
 **Convention:**
 
 - Lives within the taxonomy's domain folder
 - Typically shows term info + paginated entry listing
-
-**Available Variables:**
-
-- `title` — Term title
-- `slug` — Term slug
-- `content` — Term description
-- All custom fields from blueprint
-- Access entries via `{{ taxonomy:entries }}`
 
 **Common Pattern:**
 
@@ -188,9 +249,8 @@ taxonomies:
 
 <h2>Posts in {{ title }}</h2>
 {{ taxonomy:entries }}
-  {{ partial:posts/partials/card }}
+  {{ partial:posts/card }}
 {{ /taxonomy:entries }}
-
 ```
 
 **Reference:** https://statamic.dev/views#templates
@@ -218,7 +278,6 @@ taxonomies:
 {{ taxonomy:terms }}
   <a href="{{ url }}">{{ title }} ({{ entries_count }})</a>
 {{ /taxonomy:terms }}
-
 ```
 
 **Reference:** https://statamic.dev/tags/taxonomy
@@ -227,36 +286,16 @@ taxonomies:
 
 ---
 
-## Taxonomy Layout
-
-**Location:** `resources/views/{taxonomy}/layout.antlers.html`
-
-**Purpose:** Defines the outer HTML frame for taxonomy pages.
-
-**Key concept:**
-
-- Layout wraps template
-- Uses `{{ template_content }}` to inject template
-- Can share layout with related collection or use taxonomy-specific
-
-**Alternative:** Use shared site layout or collection layout
-
-**Reference:** https://statamic.dev/views#layouts
-
-**Mental model:** Layout defines the frame around taxonomy pages.
-
----
-
 ## Partials
 
-**Location:** `resources/views/{taxonomy}/partials/_name.antlers.html`
+**Location:** `resources/views/partials/_name.antlers.html` (global) or `resources/views/{taxonomy}/partials/_name.antlers.html` (taxonomy-specific)
+
+**Purpose:** Reusable template fragments.
 
 **Naming convention:**
 
 - Prefix filename with `_`
-- Reference WITHOUT the underscore: `{{ partial:{taxonomy}/partials/name }}`
-
-**Purpose:** Reusable template fragments within the taxonomy domain.
+- Reference WITHOUT the underscore: `{{ partial:name }}` or `{{ partial:{taxonomy}/partials/name }}`
 
 **Common Partials:**
 
@@ -390,10 +429,15 @@ taxonomies:
 
 ---
 
-## Recommended View Structure (Domain-Driven)
+## Recommended View Structure
 
 ```
 resources/views/
+├── layout.antlers.html          # Global HTML wrapper (shared across site)
+├── partials/                    # Shared components
+│   ├── _header.antlers.html
+│   ├── _footer.antlers.html
+│   └── _navigation.antlers.html
 ├── categories/
 │   ├── index.antlers.html      # All categories listing
 │   ├── show.antlers.html       # Single category (entries list)
@@ -404,8 +448,13 @@ resources/views/
     ├── show.antlers.html       # Single tag (entries list)
     └── partials/
         └── _badge.antlers.html
-
 ```
+
+**Key Points:**
+
+- `layout.antlers.html` in root `views/` = shared by all taxonomies
+- `partials/` in root `views/` = reusable components (header, footer, nav)
+- Taxonomy-specific templates in `views/{taxonomy}/` = term page markup
 
 ---
 
@@ -416,8 +465,8 @@ resources/views/
 | Taxonomy | `content/taxonomies/{handle}.yaml` | How terms work | [Link](https://statamic.dev/taxonomies) |
 | Blueprint | `resources/blueprints/taxonomies/{taxonomy}/{handle}.yaml` | What fields exist | [Link](https://statamic.dev/blueprints) |
 | Term | `content/taxonomies/{taxonomy}/{slug}.yaml` | Term content | [Link](https://statamic.dev/taxonomies#terms) |
-| Term Template | `resources/views/{taxonomy}/show.antlers.html` | Single term page | [Link](https://statamic.dev/views#templates) |
+| **Layout** | `resources/views/layout.antlers.html` | HTML frame (head, styles, scripts, header, footer) | [Link](https://statamic.dev/views#layouts) |
+| Term Template | `resources/views/{taxonomy}/show.antlers.html` | Single term page with entries | [Link](https://statamic.dev/views#templates) |
 | Index Template | `resources/views/{taxonomy}/index.antlers.html` | All terms listing | [Link](https://statamic.dev/views#templates) |
-| Layout | `resources/views/{taxonomy}/layout.antlers.html` | Page frame/shell | [Link](https://statamic.dev/views#layouts) |
-| Partial | `resources/views/{taxonomy}/partials/_*.antlers.html` | Reusable fragments | [Link](https://statamic.dev/tags/partial) |
+| Partial | `resources/views/partials/_*.antlers.html` | Reusable components | [Link](https://statamic.dev/tags/partial) |
 | Multisite Terms | `content/taxonomies/{taxonomy}/{site}/` | Per-site terms | [Link](https://statamic.dev/multi-site) |

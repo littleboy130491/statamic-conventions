@@ -175,68 +175,112 @@ Statamic will look for: `/resources/views/pages/{blueprint}.antlers.html`
 
 ---
 
-## Page Template
+## Layout vs Template: Key Distinction
 
-**Location:** `resources/views/pages/{slug}.antlers.html`
+Understanding the difference between **layouts** and **templates** is fundamental:
 
-**Purpose:** Defines page-specific markup and rendering.
+| Aspect | Layout | Template |
+|--------|--------|----------|
+| **Purpose** | HTML shell/frame | Content-specific markup |
+| **Contains** | `<head>`, global styles, shared components | Entry-specific content |
+| **Reusability** | Used by all pages | Used by specific page types |
+| **Entry Data** | Minimal (globals only) | Full access to entry variables |
+| **Modifies** | Rarely changed | Customized per blueprint |
+| **Example** | `layout.antlers.html` | `home.antlers.html`, `contact.antlers.html` |
+
+**Analogy:** Layout is the picture frame; template is the painting inside.
+
+---
+
+## Layout
+
+**Location:** `resources/views/layout.antlers.html` (global) or `resources/views/pages/layout.antlers.html` (domain-specific)
+
+**Purpose:** The overall HTML wrapper that serves every page.
+
+**Contains:**
+
+1. **HTML Structure**
+   - `<!DOCTYPE html>` declaration
+   - `<html>`, `<head>`, `<body>` tags
+   - Opening and closing tags for the entire document
+
+2. **Head Section**
+   - Meta tags (charset, viewport, SEO)
+   - `<title>` tag (often from `{{ seo_pro:meta }}` or `{{ title }}`)
+   - Global stylesheets (CSS frameworks, custom CSS)
+   - Fonts and preconnects
+   - Yield hooks for page-specific head content: `{{ yield:head }}`, `{{ yield:styles }}`
+
+3. **Shared Components** (via partials or inline)
+   - Header with logo
+   - Site navigation (`{{ partial:navigation }}`)
+   - Footer with copyright, links, social icons
+   - Analytics scripts (GTM, Google Analytics)
+
+4. **Template Injection Point**
+   - `{{ template_content }}` — where templates render their content
+
+5. **Scripts Section**
+   - Global JavaScript (jQuery, Alpine.js, etc.)
+   - Yield hook for page-specific scripts: `{{ yield:scripts }}`
+
+**Key Principle:** The layout should **not** contain entry-specific logic. It only knows about globals and provides hooks for customization.
+
+**Reference:** https://statamic.dev/views#layouts
+
+**Mental model:** Layout = reusable HTML frame that stays consistent across the site.
+
+---
+
+## Template
+
+**Location:** `resources/views/pages/{template}.antlers.html`
+
+**Purpose:** Content-specific view that extends the layout with entry data.
+
+**Contains:**
+
+- Entry-specific markup using field variables from the blueprint
+- Page sections (hero, content blocks, sidebars)
+- `{{ section:* }}` tags to inject into layout hooks
+- Entry loops, conditionals, and field rendering
+
+**Accesses:**
+- All entry fields (`{{ title }}`, `{{ content }}`, custom fields)
+- Collection data
+- Globals (`{{ site:name }}`, `{{ globals:handle }}`)
+- Parent/child data (for structured collections)
 
 **Convention:**
 
-- One template per page type or blueprint
-- Lives within the `pages/` domain folder
-- Can use `@blueprint` convention for auto-mapping
+- One template per blueprint or page type
+- Filename matches blueprint handle when using `@blueprint` convention
+- Lives within the collection's domain folder
 
 **Common Templates:**
 
-- `default.antlers.html` — Standard page layout
-- `home.antlers.html` — Homepage
-- `landing.antlers.html` — Marketing landing pages
+- `default.antlers.html` — Standard content page
+- `home.antlers.html` — Homepage with hero, features
+- `landing.antlers.html` — Marketing page with CTA sections
 - `contact.antlers.html` — Contact page with form
 
 **Reference:** https://statamic.dev/views#templates
 
-**Mental model:** Template defines what the page looks like.
-
----
-
-## Page Layout
-
-**Location:** `resources/views/pages/layout.antlers.html`
-
-**Purpose:** Defines the outer HTML frame for pages.
-
-**Key concept:**
-
-- Layout wraps template
-- Uses `{{ template_content }}` to inject template
-- Contains shared elements (doctype, head, header, footer)
-
-**Common Elements:**
-
-- `<!DOCTYPE html>` and `<html>` wrapper
-- `<head>` with meta, title, CSS
-- Header/navigation partial
-- `{{ template_content }}` placeholder
-- Footer partial
-- JavaScript includes
-
-**Reference:** https://statamic.dev/views#layouts
-
-**Mental model:** Layout defines the frame around the page.
+**Mental model:** Template = what makes each unique page look different.
 
 ---
 
 ## Partials
 
-**Location:** `resources/views/pages/partials/_name.antlers.html`
+**Location:** `resources/views/partials/_name.antlers.html`
+
+**Purpose:** Reusable template fragments shared across all collections.
 
 **Naming convention:**
 
 - Prefix filename with `_` (recommended best practice)
-- Reference WITHOUT the underscore: `{{ partial:pages/partials/name }}`
-
-**Purpose:** Reusable template fragments within the pages domain.
+- Reference WITHOUT the underscore: `{{ partial:name }}`
 
 **Features:**
 
@@ -250,9 +294,14 @@ Statamic will look for: `/resources/views/pages/{blueprint}.antlers.html`
 
 - `_header.antlers.html` — Site header and navigation
 - `_footer.antlers.html` — Site footer
+- `_navigation.antlers.html` — Main navigation menu
 - `_hero.antlers.html` — Hero/banner sections
 - `_cta.antlers.html` — Call-to-action blocks
-- `_seo.antlers.html` — Meta tags and OG data
+
+**Where partials live:**
+
+- Global partials: `resources/views/partials/`
+- Collection-specific partials: `resources/views/{collection}/partials/`
 
 **Reference:** https://statamic.dev/tags/partial
 
@@ -275,7 +324,7 @@ Statamic will look for: `/resources/views/pages/{blueprint}.antlers.html`
 
 - Collection config: `content/collections/pages.yaml`
 - Blueprints: `resources/blueprints/collections/pages/`
-- Templates & layouts: `resources/views/pages/`
+- Templates & layouts: `resources/views/`
 
 **Configuration:**
 
@@ -288,23 +337,43 @@ Statamic will look for: `/resources/views/pages/{blueprint}.antlers.html`
 
 ---
 
-## Recommended View Structure (Domain-Driven)
+## Recommended View Structure
 
 ```
 resources/views/
-└── pages/
-    ├── layout.antlers.html
-    ├── default.antlers.html
-    ├── home.antlers.html
-    ├── landing.antlers.html
-    ├── contact.antlers.html
-    └── partials/
-        ├── _header.antlers.html
-        ├── _footer.antlers.html
-        ├── _hero.antlers.html
-        ├── _cta.antlers.html
-        └── _seo.antlers.html
+├── layout.antlers.html          # Global HTML wrapper (head, styles, scripts)
+├── partials/                    # Shared components used across all collections
+│   ├── _header.antlers.html     # Site header with navigation
+│   ├── _footer.antlers.html     # Site footer
+│   └── _navigation.antlers.html # Main navigation menu
+└── pages/                       # Pages collection templates
+    ├── default.antlers.html     # Standard page template
+    ├── home.antlers.html        # Homepage template
+    ├── landing.antlers.html     # Landing page template
+    └── contact.antlers.html     # Contact page template
+```
 
+**Key Points:**
+
+- `layout.antlers.html` in root `views/` = shared by all collections
+- `partials/` in root `views/` = reusable components (header, footer, nav)
+- Collection-specific templates in `views/{collection}/` = content markup only
+
+**Alternative: Domain-Specific Layouts**
+
+For large sites with different layouts per section:
+
+```
+resources/views/
+├── layout.antlers.html          # Base layout (minimal)
+├── pages/
+│   ├── layout.antlers.html      # Pages-specific layout extends base
+│   └── default.antlers.html
+├── blog/
+│   ├── layout.antlers.html      # Blog-specific layout extends base
+│   └── post.antlers.html
+└── partials/
+    └── _shared.antlers.html
 ```
 
 ---
@@ -317,9 +386,9 @@ resources/views/
 | Blueprint | `resources/blueprints/collections/pages/{handle}.yaml` | What fields exist | [Link](https://statamic.dev/blueprints) |
 | Tree | `content/trees/collections/pages.yaml` | Hierarchy & order | [Link](https://statamic.dev/structures) |
 | Entry | `content/collections/pages/*.md` | Actual content | [Link](https://statamic.dev/collections#entries) |
-| Template | `resources/views/pages/{template}.antlers.html` | How page looks | [Link](https://statamic.dev/views#templates) |
-| Layout | `resources/views/pages/layout.antlers.html` | Page frame/shell | [Link](https://statamic.dev/views#layouts) |
-| Partial | `resources/views/pages/partials/_*.antlers.html` | Reusable fragments | [Link](https://statamic.dev/tags/partial) |
+| **Layout** | `resources/views/layout.antlers.html` | HTML frame (head, styles, scripts, header, footer) | [Link](https://statamic.dev/views#layouts) |
+| **Template** | `resources/views/pages/{template}.antlers.html` | Content markup using entry fields | [Link](https://statamic.dev/views#templates) |
+| Partial | `resources/views/partials/_*.antlers.html` | Reusable components | [Link](https://statamic.dev/tags/partial) |
 | Global | `content/globals/{handle}.yaml` | Site-wide settings | [Link](https://statamic.dev/globals) |
 | Navigation | `content/navigation/{handle}.yaml` | Custom menus | [Link](https://statamic.dev/navigation) |
 | Multisite Entries | `content/collections/pages/{site}/` | Per-site pages | [Link](https://statamic.dev/multi-site) |

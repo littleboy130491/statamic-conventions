@@ -176,11 +176,83 @@ The template value should be a path to your view file (relative to `resources/vi
 
 ---
 
+## Layout vs Template: Key Distinction
+
+Understanding the difference between **layouts** and **templates** is fundamental:
+
+| Aspect | Layout | Template |
+|--------|--------|----------|
+| **Purpose** | HTML shell/frame | Content-specific markup |
+| **Contains** | `<head>`, global styles, shared components | Entry-specific content |
+| **Reusability** | Used by all entries/collections | Used by specific entry types |
+| **Entry Data** | Minimal (globals only) | Full access to entry variables |
+| **Modifies** | Rarely changed | Customized per blueprint |
+| **Example** | `layout.antlers.html` | `show.antlers.html`, `post.antlers.html` |
+
+**Analogy:** Layout is the picture frame; template is the painting inside.
+
+---
+
+## Layout
+
+**Location:** `resources/views/layout.antlers.html` (global) or `resources/views/{collection}/layout.antlers.html` (collection-specific)
+
+**Purpose:** The overall HTML wrapper that serves every entry.
+
+**Contains:**
+
+1. **HTML Structure**
+   - `<!DOCTYPE html>` declaration
+   - `<html>`, `<head>`, `<body>` tags
+   - Opening and closing tags for the entire document
+
+2. **Head Section**
+   - Meta tags (charset, viewport, SEO)
+   - `<title>` tag (often from `{{ seo_pro:meta }}` or `{{ title }}`)
+   - Global stylesheets (CSS frameworks, custom CSS)
+   - Fonts and preconnects
+   - Yield hooks for page-specific head content: `{{ yield:head }}`, `{{ yield:styles }}`
+
+3. **Shared Components** (via partials or inline)
+   - Header with logo
+   - Site navigation (`{{ partial:navigation }}`)
+   - Footer with copyright, links, social icons
+   - Analytics scripts (GTM, Google Analytics)
+
+4. **Template Injection Point**
+   - `{{ template_content }}` — where templates render their content
+
+5. **Scripts Section**
+   - Global JavaScript (jQuery, Alpine.js, etc.)
+   - Yield hook for page-specific scripts: `{{ yield:scripts }}`
+
+**Key Principle:** The layout should **not** contain entry-specific logic. It only knows about globals and provides hooks for customization.
+
+**Reference:** https://statamic.dev/views#layouts
+
+**Mental model:** Layout = reusable HTML frame that stays consistent across the site.
+
+---
+
 ## Entry Template
 
-**Location:** `resources/views/{collection}/{slug}.antlers.html`
+**Location:** `resources/views/{collection}/{template}.antlers.html`
 
-**Purpose:** Defines entry-specific markup and rendering.
+**Purpose:** Content-specific view that extends the layout with entry data.
+
+**Contains:**
+
+- Entry-specific markup using field variables from the blueprint
+- Entry sections (hero, content blocks, sidebars)
+- `{{ section:* }}` tags to inject into layout hooks
+- Entry loops, conditionals, and field rendering
+
+**Accesses:**
+- All entry fields (`{{ title }}`, `{{ content }}`, custom fields)
+- Collection data
+- Globals (`{{ site:name }}`, `{{ globals:handle }}`)
+- Taxonomy terms attached to the entry
+- Related entries
 
 **Convention:**
 
@@ -188,40 +260,28 @@ The template value should be a path to your view file (relative to `resources/vi
 - Lives within the collection's domain folder
 - Set template explicitly in collection config or entry
 
+**Common Templates:**
+
+- `show.antlers.html` — Single entry view (default)
+- `index.antlers.html` — Collection listing page
+- `{blueprint}.antlers.html` — Blueprint-specific templates
+
 **Reference:** https://statamic.dev/views#templates
 
-**Mental model:** Template defines what the entry looks like.
-
----
-
-## Collection Layout
-
-**Location:** `resources/views/{collection}/layout.antlers.html`
-
-**Purpose:** Defines the outer HTML frame for collection entries.
-
-**Key concept:**
-
-- Layout wraps template
-- Uses `{{ template_content }}` to inject template
-- Can be shared across collections or collection-specific
-
-**Reference:** https://statamic.dev/views#layouts
-
-**Mental model:** Layout defines the frame around the entry.
+**Mental model:** Template = what makes each unique entry look different.
 
 ---
 
 ## Partials
 
-**Location:** `resources/views/{collection}/partials/_name.antlers.html`
+**Location:** `resources/views/partials/_name.antlers.html` (global) or `resources/views/{collection}/partials/_name.antlers.html` (collection-specific)
+
+**Purpose:** Reusable template fragments.
 
 **Naming convention:**
 
 - Prefix filename with `_` (recommended best practice)
-- Reference WITHOUT the underscore: `{{ partial:{collection}/partials/name }}`
-
-**Purpose:** Reusable template fragments within the collection domain.
+- Reference WITHOUT the underscore: `{{ partial:name }}` or `{{ partial:{collection}/partials/name }}`
 
 **Features:**
 
@@ -333,21 +393,31 @@ The template value should be a path to your view file (relative to `resources/vi
 
 ---
 
-## Recommended View Structure (Domain-Driven)
+## Recommended View Structure
 
 ```
 resources/views/
-└── {collection}/
-    ├── layout.antlers.html
-    ├── index.antlers.html      # Collection listing
-    ├── show.antlers.html       # Single entry (default)
+├── layout.antlers.html          # Global HTML wrapper (head, styles, scripts)
+├── partials/                    # Shared components used across all collections
+│   ├── _header.antlers.html     # Site header with navigation
+│   ├── _footer.antlers.html     # Site footer
+│   └── _navigation.antlers.html # Main navigation menu
+└── {collection}/                # Collection-specific templates
+    ├── index.antlers.html       # Collection listing page
+    ├── show.antlers.html        # Single entry (default)
     ├── {blueprint}.antlers.html # Blueprint-specific templates
-    └── partials/
-        ├── _card.antlers.html
-        ├── _hero.antlers.html
-        └── _sidebar.antlers.html
-
+    └── partials/                # Collection-specific partials
+        ├── _card.antlers.html   # Entry card for listings
+        ├── _hero.antlers.html   # Hero section
+        └── _sidebar.antlers.html # Sidebar content
 ```
+
+**Key Points:**
+
+- `layout.antlers.html` in root `views/` = shared by all collections
+- `partials/` in root `views/` = reusable components (header, footer, nav)
+- Collection-specific templates in `views/{collection}/` = content markup only
+- Collection-specific partials in `views/{collection}/partials/` = entry-specific components
 
 ---
 
@@ -359,8 +429,8 @@ resources/views/
 | Blueprint | `resources/blueprints/collections/{collection}/{handle}.yaml` | What fields exist | [Link](https://statamic.dev/blueprints) |
 | Tree | `content/trees/collections/{collection}.yaml` | Hierarchy & order | [Link](https://statamic.dev/structures) |
 | Entry | `content/collections/{collection}/*.md` | Actual content | [Link](https://statamic.dev/collections#entries) |
-| Template | `resources/views/{collection}/{template}.antlers.html` | How entry looks | [Link](https://statamic.dev/views#templates) |
-| Layout | `resources/views/{collection}/layout.antlers.html` | Entry frame/shell | [Link](https://statamic.dev/views#layouts) |
-| Partial | `resources/views/{collection}/partials/_*.antlers.html` | Reusable fragments | [Link](https://statamic.dev/tags/partial) |
+| **Layout** | `resources/views/layout.antlers.html` | HTML frame (head, styles, scripts, header, footer) | [Link](https://statamic.dev/views#layouts) |
+| **Template** | `resources/views/{collection}/{template}.antlers.html` | Content markup using entry fields | [Link](https://statamic.dev/views#templates) |
+| Partial | `resources/views/partials/_*.antlers.html` | Reusable components | [Link](https://statamic.dev/tags/partial) |
 | Multisite Entries | `content/collections/{collection}/{site}/` | Per-site content | [Link](https://statamic.dev/multi-site) |
 | Multisite Trees | `content/trees/collections/{site}/{collection}.yaml` | Per-site hierarchy | [Link](https://statamic.dev/multi-site) |
