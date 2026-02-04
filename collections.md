@@ -160,11 +160,15 @@
 1. Entry's `template` field (if explicitly set)
 2. Collection's default `template` setting
 
-**Convention: `@blueprint` mapping**
+**Setting the template value:**
 
-Set `template: @blueprint` in collection config to auto-map templates by blueprint handle.
+Set `template` in collection config to point to a template view file.
 
-Statamic will look for: `/resources/views/{collection}/{blueprint}.antlers.html`
+```yaml
+template: 'blog/show'  # Looks for resources/views/blog/show.antlers.html
+```
+
+The template value should be a path to your view file (relative to `resources/views/`), without the file extension.
 
 **Reference:** https://statamic.dev/views#templates
 
@@ -182,7 +186,7 @@ Statamic will look for: `/resources/views/{collection}/{blueprint}.antlers.html`
 
 - One template per entry type or blueprint
 - Lives within the collection's domain folder
-- Can use `@blueprint` convention for auto-mapping
+- Set template explicitly in collection config or entry
 
 **Reference:** https://statamic.dev/views#templates
 
