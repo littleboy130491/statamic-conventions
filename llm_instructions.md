@@ -210,6 +210,8 @@ ls content/collections/pages/
 | Blueprints & Fields | `blueprints_fields.md` | Fieldtypes, validation, conditional fields, fieldsets |
 | Navigation | `navigations.md` | Menus, nav trees, breadcrumbs, active states |
 | Forms | `forms.md` | Contact forms, submissions, email notifications |
+| Static Pages CMS Structure | `static_pages_cms_fields_structure.md` | Page-specific blueprints vs flexible page builder approaches |
+| HTML to Antlers | `html_to_antlers_instruction.md` | Converting static HTML templates to dynamic Antlers |
 
 ---
 
@@ -267,8 +269,65 @@ ls content/collections/pages/
 **Often combined with:**
 
 - `blueprints_fields.md` — for page field configuration
+- `static_pages_cms_fields_structure.md` — for choosing blueprint approach
+- `html_to_antlers_instruction.md` — for converting HTML to templates
 - `globals.md` — for site-wide content on pages
 - `navigations.md` — for page navigation
+
+---
+
+### Static Pages CMS Structure (`static_pages_cms_fields_structure.md`)
+
+**Consult when:**
+
+- Deciding between page-specific blueprints vs flexible page builder
+- Creating unique page layouts (About, Contact, Services)
+- Setting up Replicator-based page builders
+- Planning CMS field architecture for static pages
+
+**Trigger phrases:**
+
+- "page blueprint"
+- "page builder"
+- "flexible layout"
+- "page-specific fields"
+- "replicator sections"
+- "unique page layout"
+- "about page fields"
+- "homepage sections"
+
+**Often combined with:**
+
+- `static_pages.md` — for page structure
+- `blueprints_fields.md` — for field configuration details
+- `html_to_antlers_instruction.md` — for template conversion
+
+---
+
+### HTML to Antlers (`html_to_antlers_instruction.md`)
+
+**Consult when:**
+
+- Converting static HTML templates to dynamic Antlers
+- Extracting content from HTML files into CMS entries
+- Wrapping HTML with Statamic variables
+- Creating Antlers templates from design files
+
+**Trigger phrases:**
+
+- "convert HTML"
+- "HTML to Antlers"
+- "template conversion"
+- "static to dynamic"
+- "extract content"
+- "wrap variables"
+- "make template dynamic"
+
+**Often combined with:**
+
+- `static_pages.md` — for page template structure
+- `static_pages_cms_fields_structure.md` — for field planning
+- `blueprints_fields.md` — for field types and configuration
 
 ---
 
@@ -512,6 +571,16 @@ Some tasks require consulting multiple documents. Here are common scenarios:
 2. Note site handles from `resources/sites.yaml`
 3. All other docs — Use multisite paths shown in each document
 
+### Converting HTML Design to Statamic
+
+1. **Detect multisite** — Check `resources/sites.yaml`
+2. `html_to_antlers_instruction.md` — Conversion workflow
+3. `static_pages_cms_fields_structure.md` — Choose blueprint approach
+4. `blueprints_fields.md` — Define fields
+5. `static_pages.md` — Create pages and templates
+6. Update entry `.md` files with extracted content
+7. Create `.antlers.html` templates with wrapped variables
+
 ---
 
 ## Decision Tree
@@ -527,7 +596,10 @@ START: Any Statamic Task
 └─ STEP 1: What are you building?
 
    ├─ A page (single, standalone content)
-   │  └─ Check: static_pages.md → blueprints_fields.md
+   │  └─ Check: static_pages.md → static_pages_cms_fields_structure.md → blueprints_fields.md
+   │
+   ├─ Converting HTML to Antlers
+   │  └─ Check: html_to_antlers_instruction.md → static_pages_cms_fields_structure.md → blueprints_fields.md
    │
    ├─ Multiple similar items (posts, products, team)
    │  └─ Check: collections.md → blueprints_fields.md
@@ -561,14 +633,15 @@ START: Any Statamic Task
 | `resources/sites.yaml` | file_structure.md (multisite detection) |
 | `.yaml` in `content/collections/` | collections.md, file_structure.md |
 | `.md` entry file | collections.md, static_pages.md |
-| `.yaml` in `resources/blueprints/` | blueprints_fields.md |
+| `.yaml` in `resources/blueprints/` | blueprints_fields.md, static_pages_cms_fields_structure.md |
 | `.yaml` in `content/taxonomies/` | taxonomies.md |
 | `.yaml` in `content/globals/` | globals.md |
 | `.yaml` in `content/navigation/` | navigations.md |
 | `.yaml` in `content/trees/` | navigations.md, static_pages.md |
 | `.yaml` in `resources/forms/` | forms.md |
-| `.antlers.html` template | Relevant content doc + file_structure.md |
+| `.antlers.html` template | html_to_antlers_instruction.md, relevant content doc + file_structure.md |
 | Email template | forms.md |
+| Converting HTML files | html_to_antlers_instruction.md, static_pages_cms_fields_structure.md |
 
 ---
 
@@ -638,7 +711,20 @@ Before writing any Statamic code or configuration:
     - Single site: Create `content/collections/pages/services.md`
     - Multisite: Create `content/collections/pages/{site}/services.md` for each site
 2. Read `static_pages.md` — for page structure and templates
-3. Read `blueprints_fields.md` — for page fields
+3. Read `static_pages_cms_fields_structure.md` — for choosing blueprint approach
+4. Read `blueprints_fields.md` — for page fields
+
+---
+
+**Query:** "Convert this HTML design to Statamic"
+
+**Action:**
+
+1. **Detect multisite first** — Check `resources/sites.yaml` (or `config/statamic/sites.php`)
+2. Read `html_to_antlers_instruction.md` — for conversion workflow
+3. Read `static_pages_cms_fields_structure.md` — to decide blueprint strategy
+4. Extract content from HTML, update entry `.md` files
+5. Create `.antlers.html` templates with conditionally-wrapped variables
 
 ---
 

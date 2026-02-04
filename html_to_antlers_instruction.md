@@ -8,9 +8,10 @@ This document provides instructions for converting static HTML files into dynami
 2. Checking available blueprint fields
 3. Updating the `.md` entry file with extracted values
 4. Creating `.antlers.html` template with variables wrapped in conditionals
-5. Using Antlers tags (nav, form, collection, etc.) instead of hardcoded HTML
 
 > ⚠️ **PREREQUISITE:** Before converting, check `resources/sites.yaml` to detect if the project is single-site or multisite. Entry file paths differ between configurations.
+
+> 📖 **Related Guide:** See `statamic-static-pages-cms-structure.md` for guidance on choosing between page-specific blueprints vs flexible page builder approach.
 
 ---
 
@@ -39,7 +40,6 @@ START: HTML to Antlers Conversion
 │  └─ Location: resources/views/{collection}/{template}.antlers.html
 │  └─ Replace hardcoded HTML with variables
 │  └─ WRAP ALL VARIABLES with {{ if }} conditionals
-│  └─ USE ANTLERS TAGS (nav, form, collection, svg, etc.) instead of raw HTML
 │
 └─ STEP 6: Verify and report
    └─ List fields used, fields missing, suggested blueprint additions
@@ -82,216 +82,7 @@ cat resources/blueprints/collections/{collection}/{blueprint}.yaml
 
 **Exception:** Fields marked as `required` in blueprint can skip conditionals if guaranteed to have value.
 
-### Rule 3: Always Use Glide for Image Tags
-
-When converting `<img>` HTML elements to Antlers, **always use the `glide` tag** for responsive image optimization:
-
-```antlers
-{{-- ❌ WRONG: Bare image URL without optimization --}}
-{{ if hero_image }}<img src="{{ hero_image:url }}">{{ /if }}
-
-{{-- ✅ CORRECT: Use glide for optimization --}}
-{{ if hero_image }}<img src="{{ glide:hero_image width='800' height='600' fit='crop' }}" alt="{{ hero_image:alt }}">{{ /if }}
-```
-
-**Why use glide:**
-- Responsive image sizing
-- Automatic format optimization (WebP fallbacks)
-- Smart cropping and fitting
-- Lazy loading support
-- CDN-friendly image delivery
-
-**Common glide parameters:**
-- `width` — Image width in pixels
-- `height` — Image height in pixels
-- `fit` — How to fit image: `crop`, `max`, `stretch`, `contain`
-- `quality` — JPEG quality (1-100, default 90)
-- `format` — Output format: `jpg`, `png`, `webp`, etc.
-
-**Examples:**
-```antlers
-{{-- Responsive hero image --}}
-{{ glide:hero_image width='1200' height='400' fit='crop' quality='85' }}
-
-{{-- Thumbnail --}}
-{{ glide:image width='200' height='200' fit='crop' }}
-
-{{-- Full-width responsive --}}
-{{ glide:image width='100%' height='auto' fit='max' }}
-```
-
----
-
-### Rule 4: Use Antlers Tags Instead of Raw HTML
-
-When converting HTML, **always use Antlers tags** for dynamic functionality instead of hardcoding HTML. Statamic provides built-in tags for common patterns.
-
-> **Reference:** Full documentation at [https://statamic.dev/tags/all-tags](https://statamic.dev/tags/all-tags)
-
-#### Navigation — Use `{{ nav }}` tag
-
-```antlers
-{{-- ❌ WRONG: Hardcoded navigation --}}
-<nav>
-  <a href="/">Home</a>
-  <a href="/about">About</a>
-  <a href="/contact">Contact</a>
-</nav>
-
-{{-- ✅ CORRECT: Use nav tag --}}
-<nav>
-  {{ nav:main }}
-    <a href="{{ url }}" {{ if is_current }}class="active"{{ /if }}>{{ title }}</a>
-  {{ /nav:main }}
-</nav>
-```
-
-#### Breadcrumbs — Use `{{ nav:breadcrumbs }}` tag
-
-```antlers
-{{-- ❌ WRONG: Hardcoded breadcrumbs --}}
-<nav class="breadcrumbs">
-  <a href="/">Home</a> / <a href="/services">Services</a> / <span>Web Design</span>
-</nav>
-
-{{-- ✅ CORRECT: Use breadcrumbs tag --}}
-<nav class="breadcrumbs">
-  {{ nav:breadcrumbs }}
-    {{ if is_current }}
-      <span>{{ title }}</span>
-    {{ else }}
-      <a href="{{ url }}">{{ title }}</a>
-    {{ /if }}
-    {{ unless is_current }} / {{ /unless }}
-  {{ /nav:breadcrumbs }}
-</nav>
-```
-
-#### Forms — Use `{{ form }}` tag
-
-```antlers
-{{-- ❌ WRONG: Raw HTML form --}}
-<form action="/contact" method="POST">
-  <input type="text" name="name" placeholder="Name">
-  <input type="email" name="email" placeholder="Email">
-  <textarea name="message"></textarea>
-  <button type="submit">Send</button>
-</form>
-
-{{-- ✅ CORRECT: Use form tag --}}
-{{ form:contact }}
-  {{ if errors }}
-    <div class="alert alert-error">
-      {{ errors }}{{ value }}{{ /errors }}
-    </div>
-  {{ /if }}
-  {{ if success }}
-    <div class="alert alert-success">{{ success }}</div>
-  {{ else }}
-    <input type="text" name="name" placeholder="Name" value="{{ old:name }}">
-    <input type="email" name="email" placeholder="Email" value="{{ old:email }}">
-    <textarea name="message">{{ old:message }}</textarea>
-    <button type="submit">Send</button>
-  {{ /if }}
-{{ /form:contact }}
-```
-
-#### SVG Icons — Use `{{ svg }}` tag
-
-```antlers
-{{-- ❌ WRONG: Inline SVG or img tag --}}
-<img src="/icons/arrow.svg" alt="">
-
-{{-- ✅ CORRECT: Use svg tag for inline SVGs --}}
-{{ svg src="icons/arrow" class="icon" }}
-```
-
-#### Collection Listings — Use `{{ collection }}` tag
-
-```antlers
-{{-- ❌ WRONG: Hardcoded article list --}}
-<div class="posts">
-  <article><h2>Post 1</h2></article>
-  <article><h2>Post 2</h2></article>
-</div>
-
-{{-- ✅ CORRECT: Use collection tag --}}
-<div class="posts">
-  {{ collection:posts limit="10" sort="date:desc" }}
-    <article>
-      <a href="{{ url }}"><h2>{{ title }}</h2></a>
-      {{ if excerpt }}<p>{{ excerpt }}</p>{{ /if }}
-    </article>
-  {{ /collection:posts }}
-</div>
-```
-
-#### Asset URLs — Use `{{ asset }}` or `{{ assets }}` tags
-
-```antlers
-{{-- ❌ WRONG: Hardcoded asset path --}}
-<a href="/downloads/brochure.pdf">Download Brochure</a>
-
-{{-- ✅ CORRECT: Use asset tag --}}
-{{ asset url="/downloads/brochure.pdf" }}
-  <a href="{{ url }}">Download {{ title }} ({{ size }})</a>
-{{ /asset }}
-```
-
-#### Reusable Components — Use `{{ partial }}` tag
-
-```antlers
-{{-- ❌ WRONG: Duplicated HTML across templates --}}
-<div class="card">
-  <img src="..."><h3>...</h3><p>...</p>
-</div>
-
-{{-- ✅ CORRECT: Extract to partial --}}
-{{ partial:components/card :title="title" :image="image" :description="description" }}
-```
-
-#### Login/Auth Forms — Use user form tags
-
-```antlers
-{{-- ❌ WRONG: Raw login form --}}
-<form action="/login" method="POST">
-  <input type="email" name="email">
-  <input type="password" name="password">
-  <button>Login</button>
-</form>
-
-{{-- ✅ CORRECT: Use login form tag --}}
-{{ user:login_form }}
-  {{ if errors }}<div class="error">{{ errors }}{{ value }}{{ /errors }}</div>{{ /if }}
-  <input type="email" name="email" value="{{ old:email }}">
-  <input type="password" name="password">
-  <button>Login</button>
-{{ /user:login_form }}
-```
-
-#### Common Antlers Tags Reference
-
-| HTML Pattern | Use Antlers Tag |
-|--------------|-----------------|
-| Navigation menu | `{{ nav:handle }}` |
-| Breadcrumbs | `{{ nav:breadcrumbs }}` |
-| Contact/any form | `{{ form:handle }}` |
-| Blog/post listings | `{{ collection:handle }}` |
-| Category/tag lists | `{{ taxonomy:handle }}` |
-| SVG icons | `{{ svg src="..." }}` |
-| File downloads | `{{ asset }}` or `{{ assets }}` |
-| Login form | `{{ user:login_form }}` |
-| Register form | `{{ user:register_form }}` |
-| Profile form | `{{ user:profile_form }}` |
-| Reusable HTML blocks | `{{ partial:path/name }}` |
-| Search form | `{{ search:form }}` |
-| Search results | `{{ search:results }}` |
-| Pagination | `{{ paginate }}` |
-| Cache expensive blocks | `{{ cache }}...{{ /cache }}` |
-
----
-
-### Rule 5: Update Entry File with HTML Content
+### Rule 3: Update Entry File with HTML Content
 
 Extract values from HTML and populate the entry `.md` file:
 
@@ -337,6 +128,57 @@ This determines entry file paths in subsequent steps.
 
 ---
 
+## Step 1.5: Decide Blueprint Strategy
+
+If the blueprint doesn't exist yet, decide which approach to use:
+
+### Decision Tree
+
+```
+Is this a static page with UNIQUE layout?
+│
+├─ YES: Will this exact layout be reused on other pages?
+│  │
+│  ├─ NO: Use PAGE-SPECIFIC BLUEPRINT
+│  │  └─ Create fields matching HTML structure exactly
+│  │
+│  └─ YES: Use FLEXIBLE PAGE BUILDER (Replicator)
+│     └─ Create modular section sets
+│
+└─ NO: Does it follow an existing pattern?
+   │
+   ├─ YES: Use existing blueprint (e.g., `default`, `flexible`)
+   │
+   └─ NO: Evaluate if new blueprint or sets needed
+```
+
+### Quick Guide
+
+| Page Type | Blueprint Strategy |
+|-----------|-------------------|
+| Homepage | Hybrid (fixed hero + flexible sections) |
+| About | Page-specific (unique fixed layout) |
+| Services | Flexible (sections may change) |
+| Contact | Page-specific (fixed form + map) |
+| Landing pages | Flexible (marketing changes often) |
+| Legal pages | Simple (just title + bard content) |
+
+### Blueprint Naming Convention
+
+```
+resources/blueprints/collections/pages/
+├── default.yaml        # Simple pages (title + content)
+├── flexible.yaml       # Page builder with replicator
+├── home.yaml           # Homepage specific
+├── about.yaml          # About page specific
+├── contact.yaml        # Contact page specific
+└── services.yaml       # Services page specific
+```
+
+**See:** `statamic-static-pages-cms-structure.md` for detailed blueprint examples.
+
+---
+
 ## Step 2: Check Blueprint Fields FIRST
 
 **Before looking at HTML**, inventory all available fields:
@@ -345,6 +187,68 @@ This determines entry file paths in subsequent steps.
 
 ```bash
 cat resources/blueprints/collections/{collection}/{blueprint}.yaml
+```
+
+### If Blueprint Doesn't Exist
+
+Create a new blueprint based on HTML structure analysis. See Step 1.5 for strategy decision.
+
+**For page-specific blueprint:**
+```yaml
+# resources/blueprints/collections/pages/{page-name}.yaml
+title: Page Name
+sections:
+  hero:
+    display: Hero Section
+    fields:
+      -
+        handle: title
+        field:
+          type: text
+          display: Page Title
+          required: true
+      -
+        handle: hero_lead
+        field:
+          type: text
+          display: Hero Lead Text
+      -
+        handle: hero_image
+        field:
+          type: assets
+          display: Hero Image
+          max_files: 1
+          
+  # Add more sections matching HTML structure...
+```
+
+**For flexible page builder:**
+```yaml
+# resources/blueprints/collections/pages/flexible.yaml
+title: Flexible Page
+sections:
+  main:
+    display: Page Content
+    fields:
+      -
+        handle: title
+        field:
+          type: text
+          display: Page Title
+          required: true
+      -
+        handle: sections
+        field:
+          type: replicator
+          display: Page Sections
+          sets:
+            hero:
+              display: Hero
+              fields: ...
+            text_block:
+              display: Text Block
+              fields: ...
+            # Add more sets...
 ```
 
 ### Create Field Inventory
@@ -639,19 +543,21 @@ resources/views/{collection}/{template}.antlers.html
 #### Asset Fields
 
 ```antlers
-{{-- Single image (with glide optimization) --}}
+{{-- Single image --}}
 {{ if hero_image }}
-  <img
-    src="{{ glide:hero_image width='800' height='600' fit='crop' }}"
+  <img 
+    src="{{ hero_image:url }}" 
     alt="{{ hero_image:alt ?? title }}"
+    {{ if hero_image:width }}width="{{ hero_image:width }}"{{ /if }}
+    {{ if hero_image:height }}height="{{ hero_image:height }}"{{ /if }}
   >
 {{ /if }}
 
-{{-- Image gallery (with glide optimization) --}}
+{{-- Image gallery --}}
 {{ if gallery }}
   <div class="gallery">
     {{ gallery }}
-      <img src="{{ glide:url width='400' height='300' fit='crop' }}" alt="{{ alt }}">
+      <img src="{{ url }}" alt="{{ alt }}">
     {{ /gallery }}
   </div>
 {{ /if }}
@@ -687,7 +593,7 @@ resources/views/{collection}/{template}.antlers.html
       {{ if type == 'feature' }}
         <div class="feature">
           {{ if icon }}
-            <img src="{{ glide:icon width='64' height='64' fit='max' }}" alt="" class="feature-icon">
+            <img src="{{ icon:url }}" alt="" class="feature-icon">
           {{ /if }}
           {{ if title }}<h3>{{ title }}</h3>{{ /if }}
           {{ if description }}<p>{{ description }}</p>{{ /if }}
@@ -717,7 +623,7 @@ resources/views/{collection}/{template}.antlers.html
       {{ elseif type == 'image' }}
         {{ if image }}
           <figure>
-            <img src="{{ glide:image width='600' height='400' fit='crop' }}" alt="{{ image:alt }}">
+            <img src="{{ image:url }}" alt="{{ image:alt }}">
             {{ if caption }}<figcaption>{{ caption }}</figcaption>{{ /if }}
           </figure>
         {{ /if }}
@@ -743,7 +649,7 @@ resources/views/{collection}/{template}.antlers.html
     {{ team_members }}
       <div class="team-member">
         {{ if photo }}
-          <img src="{{ glide:photo width='300' height='300' fit='crop' }}" alt="{{ name }}">
+          <img src="{{ photo:url }}" alt="{{ name }}">
         {{ /if }}
         {{ if name }}<h3>{{ name }}</h3>{{ /if }}
         {{ if role }}<p class="role">{{ role }}</p>{{ /if }}
@@ -778,8 +684,8 @@ resources/views/{collection}/{template}.antlers.html
 {{ if title || subtitle || hero_image }}
   <section class="hero">
     {{ if hero_image }}
-      <img
-        src="{{ glide:hero_image width='1200' height='500' fit='crop' }}"
+      <img 
+        src="{{ hero_image:url }}" 
         alt="{{ hero_image:alt ?? title }}"
         class="hero-image"
       >
@@ -809,7 +715,7 @@ resources/views/{collection}/{template}.antlers.html
           <div class="feature">
             {{ if icon }}
               <div class="feature-icon">
-                <img src="{{ glide:icon width='80' height='80' fit='max' }}" alt="">
+                <img src="{{ icon:url }}" alt="">
               </div>
             {{ /if }}
             {{ if title }}<h3>{{ title }}</h3>{{ /if }}
@@ -883,7 +789,7 @@ After conversion, provide a summary:
 
 ---
 
-## Step 7: Antlers Syntax Reference
+## Step 6: Antlers Syntax Reference
 
 ### Basic Variables
 
@@ -938,23 +844,26 @@ After conversion, provide a summary:
 
 ### Assets (Images, Files)
 
-**Single image (always use glide):**
+**Single image:**
 ```html
 <!-- HTML -->
 <img src="images/hero.jpg" alt="Hero Image">
 
-<!-- Antlers with Glide optimization -->
-<img src="{{ glide:hero_image width='800' height='600' fit='crop' }}" alt="{{ hero_image:alt }}">
+<!-- Antlers -->
+<img src="{{ hero_image:url }}" alt="{{ hero_image:alt }}">
+
+<!-- With additional attributes -->
+<img 
+  src="{{ hero_image:url }}"
+  alt="{{ hero_image:alt }}"
+  width="{{ hero_image:width }}"
+  height="{{ hero_image:height }}"
+>
 ```
 
-**Glide with multiple parameters:**
+**Image with Glide (resizing):**
 ```antlers
-<img src="{{ glide:hero_image width='1200' height='500' fit='crop' quality='85' }}" alt="{{ hero_image:alt }}">
-```
-
-**Responsive sizing with glide:**
-```antlers
-<img src="{{ glide:image width='100%' height='auto' fit='max' }}" alt="{{ alt }}">
+<img src="{{ glide:hero_image width='800' height='600' fit='crop' }}">
 ```
 
 **Multiple images (gallery):**
@@ -1094,7 +1003,7 @@ sections:
 <!-- Antlers (dynamic) -->
 {{ sections }}
   {{ if type == 'hero' }}
-    <section class="hero" style="background-image: url('{{ glide:background width='1200' height='500' fit='crop' }}')">
+    <section class="hero" style="background-image: url('{{ background:url }}')">
       <h1>{{ heading }}</h1>
     </section>
   {{ elseif type == 'features' }}
@@ -1343,14 +1252,14 @@ tags:
 
 **With filtering and sorting:**
 ```antlers
-{{ collection:posts
+{{ collection:posts 
    limit="6"
    sort="date:desc"
    taxonomy:categories="news"
 }}
   <article>
     {{ if featured_image }}
-      <img src="{{ glide:featured_image width='400' height='250' fit='crop' }}" alt="{{ title }}">
+      <img src="{{ featured_image:url }}" alt="{{ title }}">
     {{ /if }}
     <h2>{{ title }}</h2>
     <p>{{ excerpt | truncate:150 }}</p>
@@ -1527,13 +1436,20 @@ Extract repeated HTML blocks into partials:
 **Step 1: Check Blueprint**
 ```yaml
 # resources/blueprints/collections/pages/default.yaml
-fields:
-  - handle: title
-    field: { type: text, required: true }
-  - handle: description
-    field: { type: textarea }
-  - handle: team_image
-    field: { type: assets, max_files: 1 }
+title: Default Page
+sections:
+  main:
+    display: Main Content
+    fields:
+      -
+        handle: title
+        field: { type: text, required: true }
+      -
+        handle: description
+        field: { type: textarea }
+      -
+        handle: team_image
+        field: { type: assets, max_files: 1 }
 ```
 
 **Step 2: Scan HTML**
@@ -1577,7 +1493,7 @@ team_image: images/team.jpg
       <p>{{ description }}</p>
     {{ /if }}
     {{ if team_image }}
-      <img src="{{ glide:team_image width='800' height='600' fit='crop' }}" alt="{{ team_image:alt ?? 'Our Team' }}">
+      <img src="{{ team_image:url }}" alt="{{ team_image:alt ?? 'Our Team' }}">
     {{ /if }}
   </section>
 {{ /if }}
@@ -1590,19 +1506,29 @@ team_image: images/team.jpg
 **Step 1: Check Blueprint**
 ```yaml
 # resources/blueprints/collections/posts/post.yaml
-fields:
-  - handle: title
-    field: { type: text, required: true }
-  - handle: date
-    field: { type: date, required: true }
-  - handle: author
-    field: { type: users, max_items: 1 }
-  - handle: categories
-    field: { type: terms, taxonomy: categories }
-  - handle: featured_image
-    field: { type: assets, max_files: 1 }
-  - handle: content
-    field: { type: bard }
+title: Blog Post
+sections:
+  main:
+    display: Post Content
+    fields:
+      -
+        handle: title
+        field: { type: text, required: true }
+      -
+        handle: date
+        field: { type: date, required: true }
+      -
+        handle: author
+        field: { type: users, max_items: 1 }
+      -
+        handle: categories
+        field: { type: terms, taxonomy: categories }
+      -
+        handle: featured_image
+        field: { type: assets, max_files: 1 }
+      -
+        handle: content
+        field: { type: bard }
 ```
 
 **Step 2: Scan HTML**
@@ -1669,7 +1595,7 @@ content:
   </header>
   
   {{ if featured_image }}
-    <img src="{{ glide:featured_image width='900' height='500' fit='crop' }}" alt="{{ featured_image:alt ?? title }}">
+    <img src="{{ featured_image:url }}" alt="{{ featured_image:alt ?? title }}">
   {{ /if }}
   
   {{ if content }}
@@ -1687,35 +1613,53 @@ content:
 **Step 1: Check Blueprint**
 ```yaml
 # resources/blueprints/collections/pages/services.yaml
-fields:
-  - handle: title
-    field: { type: text, required: true }
-  - handle: subtitle
-    field: { type: text }
-  - handle: sections
-    field:
-      type: replicator
-      sets:
-        services_grid:
-          fields:
-            - handle: services
-              field:
-                type: grid
-                fields:
-                  - handle: icon
-                    field: { type: assets, max_files: 1 }
-                  - handle: title
-                    field: { type: text }
-                  - handle: description
-                    field: { type: textarea }
-        cta:
-          fields:
-            - handle: heading
-              field: { type: text }
-            - handle: button_text
-              field: { type: text }
-            - handle: button_link
-              field: { type: link }
+title: Services Page
+sections:
+  hero:
+    display: Hero
+    fields:
+      -
+        handle: title
+        field: { type: text, required: true }
+      -
+        handle: subtitle
+        field: { type: text }
+        
+  content:
+    display: Page Sections
+    fields:
+      -
+        handle: sections
+        field:
+          type: replicator
+          sets:
+            services_grid:
+              fields:
+                -
+                  handle: services
+                  field:
+                    type: grid
+                    fields:
+                      -
+                        handle: icon
+                        field: { type: assets, max_files: 1 }
+                      -
+                        handle: title
+                        field: { type: text }
+                      -
+                        handle: description
+                        field: { type: textarea }
+            cta:
+              fields:
+                -
+                  handle: heading
+                  field: { type: text }
+                -
+                  handle: button_text
+                  field: { type: text }
+                -
+                  handle: button_link
+                  field: { type: link }
 ```
 
 **Step 2: Scan HTML**
@@ -1791,7 +1735,7 @@ sections:
           {{ services }}
             <div class="service">
               {{ if icon }}
-                <img src="{{ glide:icon width='100' height='100' fit='max' }}" alt="">
+                <img src="{{ icon:url }}" alt="">
               {{ /if }}
               {{ if title }}<h3>{{ title }}</h3>{{ /if }}
               {{ if description }}<p>{{ description }}</p>{{ /if }}
@@ -1900,7 +1844,6 @@ Some content should remain hardcoded (not editable):
 - [ ] Used correct Antlers syntax for each field type
 - [ ] Added fallback values where appropriate
 - [ ] Wrapped sections with conditionals (show only if has content)
-- [ ] **Used Antlers tags** (nav, form, collection, svg, etc.) instead of raw HTML
 
 ### Verification
 - [ ] Template renders without errors
@@ -1988,7 +1931,6 @@ Some content should remain hardcoded (not editable):
    └─ Replace HTML with Antlers variables
    └─ WRAP EVERYTHING with {{ if }} conditionals
    └─ Use fallbacks where needed
-   └─ USE ANTLERS TAGS (nav, form, collection, etc.) not raw HTML
 
 5. REPORT
    └─ List fields used
