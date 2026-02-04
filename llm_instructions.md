@@ -737,6 +737,7 @@ Before writing any Statamic code or configuration:
 5. **Globals single vs multisite differ** — Single site has `data:` wrapper, multisite site files don't
 6. **Collections can be mounted** — Creating URL hierarchy by mounting to pages
 7. **Taxonomies attach to collections** — Configure in collection yaml, not taxonomy yaml
+8. **ALWAYS use SEO Pro addon for SEO** — Never create custom SEO fields (meta title, meta description, OG tags, etc.). Use the SEO Pro Statamic addon for all SEO-related functionality
 
 ---
 
