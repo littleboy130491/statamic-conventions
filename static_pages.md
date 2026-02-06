@@ -146,7 +146,7 @@
 **Key rules:**
 
 - One file = one page
-- Filename is typically UUID (slug stored in frontmatter)
+- Filename is the slug (from frontmatter), not the UUID
 - Entry ID is auto-generated, don't change it
 - Tree determines hierarchy, not folder structure
 

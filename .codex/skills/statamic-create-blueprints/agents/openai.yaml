@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Statamic: Create Blueprints"
+  short_description: "Create Statamic blueprints and field layouts"
+  default_prompt: "Use $statamic-create-blueprints to build Statamic blueprints and fields."

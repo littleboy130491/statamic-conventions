@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Statamic: Create Collections"
+  short_description: "Create Statamic collection configs and trees"
+  default_prompt: "Use $statamic-create-collections to create collection configs and structures."

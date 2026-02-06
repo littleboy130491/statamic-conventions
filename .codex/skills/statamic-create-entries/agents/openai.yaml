@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Statamic: Create Entries"
+  short_description: "Create Statamic entries with dummy content"
+  default_prompt: "Use $statamic-create-entries to generate Statamic entry files and dummy data."

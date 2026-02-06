@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Statamic: Static Pages From HTML"
+  short_description: "Map HTML to Statamic static page fields"
+  default_prompt: "Use $statamic-static-pages-from-html to map HTML into Statamic page fields."
