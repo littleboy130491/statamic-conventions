@@ -308,13 +308,37 @@ unless:
     width: 50
 ```
 
-## Localizable Fields
+## Multisite & Localization
+
+When the project uses multisite, **all fields should be `localizable: true` by default**. This ensures each site/locale can have its own content. Only set `localizable: false` for fields that must share the same value across all sites (e.g., structural settings, internal flags).
+
+**Default behavior:** `localizable: true` on every field unless there is a specific reason not to.
+
+**Detection:** Check for multisite configuration in `config/statamic/sites.php` or the presence of multiple sites in `resources/sites`. If multisite is enabled, apply the localizable default.
 
 ```yaml
+# Multisite: default for all fields
 field:
   type: text
-  localizable: true  # Different value per site
+  localizable: true
+
+# Exception: field shared across all sites
+field:
+  type: toggle
+  localizable: false  # Same value across all sites
 ```
+
+**Fields typically NOT localized:**
+- Internal toggles or settings shared across sites
+- Relationship fields where the same entry should be referenced everywhere
+- Structural/layout fields (e.g., template selection)
+
+**Fields that should always be localized:**
+- title, content/bard, textarea, excerpt — any user-facing text
+- slug — so each locale can have its own URL
+- assets/images — different images per locale if needed
+- SEO fields — different meta per locale
+- date fields — if publication dates differ per locale
 
 ## Boundaries
 
