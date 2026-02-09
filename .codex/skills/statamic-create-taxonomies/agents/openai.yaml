@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "Statamic: Create Taxonomies"
-  short_description: "Create Statamic taxonomy configs and terms"
-  default_prompt: "Use $statamic-create-taxonomies to create taxonomy configs and terms."

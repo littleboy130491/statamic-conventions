@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "Statamic: Create Navigations"
-  short_description: "Create Statamic navigation configs and trees"
-  default_prompt: "Use $statamic-create-navigations to set up navigation config and trees."

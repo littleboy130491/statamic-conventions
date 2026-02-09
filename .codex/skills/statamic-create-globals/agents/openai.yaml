@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "Statamic: Create Globals"
-  short_description: "Create Statamic global sets and data"
-  default_prompt: "Use $statamic-create-globals to create global set config and data."

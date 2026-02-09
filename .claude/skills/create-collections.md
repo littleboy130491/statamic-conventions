@@ -70,7 +70,15 @@ structure:
 List each taxonomy handle under `taxonomies` (e.g., `categories`, `tags`)
 
 
+### Step 3: Mount Collection (Optional)
+
+Ask the user if they want to mount this collection to a page. If yes:
+
+1. Create a page entry using rule from `create-entries.md` with filename `{collection}.md` and set `template: '{collection}/index'`
+2. Get the `id` from the created page entry file
+3. Add `mount: {page-id}` to `content/collections/{handle}.yaml` — replace `{page-id}` with the `id` value from the entry created in 2
+
 ## Boundaries
 
 - Do NOT create blueprints here — Use `create-blueprints`
-- Do NOT create entries here — Use `create-entries`
+- Do NOT create entries here — Use `create-entries` (except for mount page entries in Step 3)

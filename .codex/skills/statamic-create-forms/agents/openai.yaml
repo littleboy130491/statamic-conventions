@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "Statamic: Create Forms"
-  short_description: "Create Statamic forms, blueprints, emails"
-  default_prompt: "Use $statamic-create-forms to create Statamic forms and templates."
