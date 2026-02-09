@@ -1,13 +1,12 @@
 # Create Collections
 
-Create or update Statamic collection configuration, routing, ordering, structure, and mount settings.
+Create or update Statamic collection configuration with proper multisite support.
 
 ## Quick Start
 
 1. **Detect multisite first** — Check `resources/sites.yaml`
 2. Create `content/collections/{handle}.yaml` with collection config
-3. For structured collections, create tree file
-4. Use separate skills for blueprints and entries
+3. Use separate skills for blueprints and entries
 
 ## Workflow
 
@@ -19,131 +18,59 @@ Check `resources/sites.yaml` (or `config/statamic/sites.php`):
 
 ### Step 2: Create Collection Config
 
-**Path:** `content/collections/{handle}.yaml`
+**Path:**
+`content/collections/{handle}.yaml`
 
-**Required Fields:**
-- `title` — Display name in Control Panel
 
-**Full Example:**
+**Always include these fields:**
+
+| Field | Value |
+|-------|-------|
+| `title` | Collection display name in plural form (e.g., "Blog Posts") |
+| `icon` | `collections` |
+| `template` | `{handle}/show` — replace `{handle}` with the collection handle |
+| `layout` | `{handle}/layout` — replace `{handle}` with the collection handle |
+| `revisions` | `true` |
+| `route` | `/{handle}/{slug}` — replace `{handle}` with the collection handle |
+| `date` | `true` |
+| `sort_by` | `date` |
+| `sort_dir` | `desc` |
+| `date_behavior` | See hardcoded block below |
+| `preview_targets` | See hardcoded block below |
+| `structure` | See hardcoded block below. Set `max_depth` based on collection type |
+
 ```yaml
-title: Blog Posts
-route: '/blog/{slug}'
-template: 'blog/show'
-layout: layout
-blueprints:
-  - post
-sites:
-  - english
-  - indonesian
-taxonomies:
-  - categories
-  - tags
-date: true
 date_behavior:
   past: public
   future: private
-sort_by: date
-sort_dir: desc
+preview_targets:
+  -
+    label: Entry
+    url: '{permalink}'
+    refresh: true
 structure:
-  root: true
-  max_depth: 3
-mount: entry-uuid-here
-orderable: true
-revisions: true
-inject:
-  author: default-author-id
+  root: false
+  max_depth: 1
+  slugs: true
 ```
 
-### Step 3: Choose Collection Type
+`max_depth` guide:
+- `1` — Flat collections (e.g., blog posts, news). Enables drag-and-drop ordering without nesting
+- `3` or more — Hierarchical collections (e.g., pages). Enables nested parent-child structure
 
-| Type | Config | Use Case |
-|------|--------|----------|
-| **Standard** | No special settings | Simple content lists |
-| **Dated** | `date: true` | Blog posts, news, events |
-| **Orderable** | `orderable: true` | Manual drag-drop ordering |
-| **Structured** | `structure: { root: true }` | Hierarchical pages |
+**Add if multisite** (multiple sites in `resources/sites.yaml`):
 
-### Step 4: Create Tree (Structured Collections Only)
+| Field | Value |
+|-------|-------|
+| `sites` | List all site keys from `resources/sites.yaml` |
+| `propagate` | `true` |
 
-**Path:**
-- Single site: `content/trees/collections/{collection}.yaml`
-- Multisite: `content/trees/collections/{site}/{collection}.yaml`
+**Add if taxonomy relationships exist:**
 
-**Structure:**
-```yaml
-tree:
-  -
-    entry: home-entry-uuid
-  -
-    entry: about-entry-uuid
-    children:
-      -
-        entry: team-entry-uuid
-```
+List each taxonomy handle under `taxonomies` (e.g., `categories`, `tags`)
 
-### Step 5: Route Patterns
-
-| Pattern | Example |
-|---------|---------|
-| Standard | `/{slug}` |
-| Blog | `/blog/{slug}` |
-| Structured | `/{parent_uri}/{slug}` |
-| Dated | `/blog/{year}/{month}/{slug}` |
-| Mounted | `/{mount}/{slug}` |
-
-### Step 6: Template Configuration
-
-```yaml
-template: 'blog/show'  # Points to resources/views/blog/show.antlers.html
-```
-
-## Multisite
-
-**Shared:** Collection config, blueprints
-**Per-site:** Entries, trees
-
-```yaml
-sites:
-  - english
-  - indonesian
-```
-
-**Paths:**
-- Entries: `content/collections/{collection}/{site}/`
-- Trees: `content/trees/collections/{site}/{collection}.yaml`
-
-## Mounting Collections
-
-```yaml
-mount: entry-uuid-of-parent-page
-```
-
-## Attaching Taxonomies
-
-```yaml
-taxonomies:
-  - categories
-  - tags
-```
 
 ## Boundaries
 
 - Do NOT create blueprints here — Use `create-blueprints`
 - Do NOT create entries here — Use `create-entries`
-
-## Accuracy Checks
-
-- Entry filenames use slug (or date.slug for dated), NOT UUID
-- UUID lives in frontmatter `id` field
-- Tree files reference entries by UUID
-- Template path has no file extension
-
-## Quick Reference
-
-| Concept | Location |
-|---------|----------|
-| Collection config | `content/collections/{handle}.yaml` |
-| Blueprint | `resources/blueprints/collections/{collection}/{handle}.yaml` |
-| Tree | `content/trees/collections/{collection}.yaml` |
-| Entry | `content/collections/{collection}/{slug}.md` |
-| Template | `resources/views/{collection}/{template}.antlers.html` |

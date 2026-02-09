@@ -22,37 +22,50 @@ Create or update Statamic blueprints for collections, taxonomies, globals, forms
 
 ## Blueprint Structure
 
+Every blueprint has a `title` and `tabs`. Use exactly these 4 tabs in this order:
+
+| Tab | Purpose | Fields |
+|-----|---------|--------|
+| `main` | Primary content | title, content/bard, excerpt, featured_image, and other content fields |
+| `sidebar` | Meta & relationships | author, categories, tags, toggles, slug, date, and other meta fields |
+| `SEO Meta` | SEO Pro addon | Hardcoded — always include as-is |
+| `SEO Previews` | SEO Pro addon | Hardcoded — always include as-is |
+
+**How to build:**
+
+1. `title` — Set to the blueprint display name (e.g., "Post", "Page", "Product")
+2. `main` tab — Add sections with content fields. Each section can have a `display` name and `instructions`
+3. `sidebar` tab — Add a section with meta/relationship fields
+4. `SEO Meta` and `SEO Previews` tabs — Always copy these exactly:
+
 ```yaml
-title: Page
-tabs:
-  main:
-    display: Main
-    sections:
-      -
-        display: Content
-        instructions: Main content area
-        fields:
-          -
-            handle: title
-            field:
-              type: text
-              display: Title
-              required: true
-          -
-            handle: content
-            field:
-              type: bard
-              display: Content
-  sidebar:
-    display: Sidebar
+  'SEO Meta':
+    display: 'SEO Meta'
     sections:
       -
         fields:
           -
-            handle: author
+            handle: seo
             field:
-              type: users
-              max_items: 1
+              type: seo_pro
+              listable: false
+              display: SEO
+              localizable: false
+  'SEO Previews':
+    display: 'SEO Previews'
+    sections:
+      -
+        fields:
+          -
+            handle: seo_previews
+            field:
+              type: seo_pro_previews
+              listable: false
+              display: 'SEO Previews'
+              localizable: true
+              hide_display: true
+              unless:
+                seo.enabled: 'equals false'
 ```
 
 ## Field Definition
@@ -225,24 +238,19 @@ fields:
 
 **Create Fieldset:**
 ```yaml
-title: SEO Fields
+title: 'Fieldset Name'
 fields:
   -
-    handle: meta_title
+    handle: field_name
     field:
       type: text
-  -
-    handle: meta_description
-    field:
-      type: textarea
-      character_limit: 160
 ```
 
 **Import in Blueprint:**
 ```yaml
 fields:
-  - import: seo
-  - import: seo
+  - import: fieldset_handle
+  - import: fieldset_handle
     prefix: page_  # Optional prefix
 ```
 
