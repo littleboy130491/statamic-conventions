@@ -5,9 +5,10 @@ Create Statamic entry files with dummy content for collections and pages.
 ## Quick Start
 
 1. **Detect multisite first** — Check `resources/sites.yaml`
-2. Check blueprint for available fields
+2. **Check blueprint** — Look in `resources/blueprints/collections/{collection}/` for available blueprints. If no specific blueprint exists, check `resources/blueprints/default.yaml`
 3. Create `.md` file with YAML frontmatter + optional markdown content
 4. Generate UUID for `id` field
+5. **Multisite only** — Create full content entries for the default site first, then create translation entries for each non-default site
 
 ## Entry Paths
 
@@ -21,140 +22,22 @@ Create Statamic entry files with dummy content for collections and pages.
 
 ## Entry Structure
 
+1. Read the blueprint file at `resources/blueprints/collections/{collection}/{blueprint}.yaml`
+2. Use the fields defined in the blueprint to build the YAML frontmatter
+3. Add `id` (UUID) and `title` as required fields
+4. Populate each field from the blueprint with appropriate dummy content matching its fieldtype
+5. If the blueprint has a `bard` or `markdown` field named `content`, place that content after the closing `---` as markdown body
+
 ```yaml
 ---
-id: 550e8400-e29b-41d4-a716-446655440000
-title: My Page Title
-blueprint: page
-published: true
-slug: my-page
-template: pages/default
-author: user-uuid
-custom_field: value
+id: {generated-uuid}
+title: {entry title}
+blueprint: {blueprint handle}
+{field_from_blueprint}: {value matching fieldtype}
 ---
-Optional markdown content goes here.
-
-This becomes the `content` field.
+{markdown body if blueprint has a content field}
 ```
 
-## Required Fields
-
-- `id` — Unique UUID (auto-generate)
-- `title` — Entry title
-
-## Common Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | UUID | Unique identifier (required) |
-| `title` | string | Entry title (required) |
-| `blueprint` | string | Blueprint handle (if not default) |
-| `published` | boolean | Publication status |
-| `slug` | string | URL slug |
-| `date` | date | Publication date (dated collections) |
-| `template` | string | Override template |
-| `layout` | string | Override layout |
-| `author` | UUID/array | User reference |
-
-## Field Value Formats
-
-### Text
-```yaml
-title: My Title
-tagline: 'Value with "quotes"'
-```
-
-### Multiline
-```yaml
-description: |
-  First paragraph.
-
-  Second paragraph.
-```
-
-### Single Asset
-```yaml
-hero_image: images/hero.jpg
-```
-
-### Multiple Assets
-```yaml
-gallery:
-  - images/photo1.jpg
-  - images/photo2.jpg
-```
-
-### Replicator
-```yaml
-sections:
-  -
-    type: hero
-    heading: Welcome
-    image: images/hero.jpg
-  -
-    type: text_block
-    content: 'Some content here...'
-  -
-    type: features
-    items:
-      -
-        title: Feature 1
-        description: Description 1
-```
-
-### Grid
-```yaml
-team_members:
-  -
-    name: John Doe
-    role: CEO
-    photo: team/john.jpg
-  -
-    name: Jane Smith
-    role: CTO
-```
-
-### Bard (Rich Text)
-```yaml
-content:
-  -
-    type: paragraph
-    content:
-      -
-        type: text
-        text: 'This is a paragraph.'
-  -
-    type: heading
-    attrs:
-      level: 2
-    content:
-      -
-        type: text
-        text: 'Subheading'
-```
-
-### Entries Relationship
-```yaml
-related_posts:
-  - post-uuid-1
-  - post-uuid-2
-```
-
-### Terms
-```yaml
-categories:
-  - news
-  - technology
-tags:
-  - featured
-```
-
-### Link
-```yaml
-cta_link: /contact
-# or entry reference
-cta_link: 'entry::page-uuid'
-```
 
 ## Generating UUIDs
 
@@ -179,96 +62,42 @@ date: '2024-01-15'
 ---
 ```
 
-## Structured Collections (Pages)
 
-For structured collections, entries are also referenced in tree file:
+## Translating Entries -> MULTISITE ONLY
 
-**Tree:** `content/trees/collections/{collection}.yaml`
-```yaml
-tree:
-  -
-    entry: home-uuid
-  -
-    entry: about-uuid
-    children:
-      -
-        entry: team-uuid
-```
+To create a translation entry for a non-default site:
 
-## Dummy Content Examples
+1. Use the **same slug** as the default site entry for the filename
+2. Generate a **new unique UUID** for the `id` field — must not duplicate any existing ID
+3. Set `origin` to the `id` of the default site entry
+4. Read the blueprint to identify which fields are `localizable: true`
+5. Only include localizable fields with translated values
+6. Fields not included will fall back to the origin entry
 
-### Blog Post
+**Default site entry:** `content/collections/pages/english/about.md`
 ```yaml
 ---
-id: 550e8400-e29b-41d4-a716-446655440001
-title: Getting Started with Statamic
-blueprint: post
-published: true
-date: '2024-01-15'
-author: admin-user-uuid
-featured_image: blog/getting-started.jpg
-excerpt: Learn how to get started with Statamic CMS.
-categories:
-  - tutorials
-tags:
-  - beginner
-  - cms
----
-Welcome to Statamic! This guide will help you get started...
-```
-
-### Page
-```yaml
----
-id: 550e8400-e29b-41d4-a716-446655440002
+id: 550e8400-e29b-41d4-a716-446655440010
 title: About Us
 blueprint: about
-hero_image: pages/about-hero.jpg
+published: true
 hero_lead: Building trust since 1999
-story_heading: Our Story
-story_content:
-  -
-    type: paragraph
-    content:
-      -
-        type: text
-        text: 'We started in a small garage in 1999...'
-team_members:
-  -
-    name: John Founder
-    role: CEO
-    photo: team/john.jpg
 ---
+Welcome to our company...
 ```
 
-### Product
+**Translation entry:** `content/collections/pages/indonesian/about.md`
 ```yaml
 ---
-id: 550e8400-e29b-41d4-a716-446655440003
-title: Premium Widget
-blueprint: product
-price: 99.99
-sku: WIDGET-001
-images:
-  - products/widget-1.jpg
-  - products/widget-2.jpg
-features:
-  -
-    title: Durable
-    description: Built to last
-  -
-    title: Lightweight
-    description: Easy to carry
-published: true
+id: 550e8400-e29b-41d4-a716-446655440011
+origin: 550e8400-e29b-41d4-a716-446655440010
+title: Tentang Kami
+hero_lead: Membangun kepercayaan sejak 1999
 ---
+Selamat datang di perusahaan kami...
 ```
 
-## Multisite Entries
-
-Each site has its own entry files. Localizable fields can differ per site.
-
-**English:** `content/collections/pages/english/about.md`
-**Indonesian:** `content/collections/pages/indonesian/about.md`
+Only translate fields marked `localizable: true` in the blueprint. Non-localizable fields are shared across all sites and must NOT be duplicated in translation entries.
 
 ## Boundaries
 
@@ -281,13 +110,3 @@ Each site has its own entry files. Localizable fields can differ per site.
 - Entry file is `.md` with YAML frontmatter
 - UUID in `id` field, slug in filename
 - Dated entries: date in both filename and frontmatter
-- Replicator items need `type` key matching set name
-- Asset paths relative to container root
-
-## Quick Reference
-
-| Collection Type | Filename Pattern |
-|----------------|------------------|
-| Standard | `{slug}.md` |
-| Dated | `{YYYY-MM-DD}.{slug}.md` |
-| Multisite | `{site}/{slug}.md` |
