@@ -56,7 +56,7 @@ Read the term file at `content/taxonomies/{taxonomy}/{slug}.yaml` — verify it 
 
 ### Step 4: Add Localizations
 
-Edit the existing term file — add **only** the `localizations` key. Do not modify existing top-level fields.
+Edit the existing term file — add the `localizations` key. Do not modify existing top-level fields.
 
 **Structure:**
 ```yaml
@@ -65,6 +65,8 @@ localizations:
     title: {translated title}
     {localizable_field}: {translated value}
     slug: {translated-slug-or-same-slug}
+    updated_by: {super-user-id}
+    updated_at: {unix-timestamp-now}
 ```
 
 ### Example
@@ -74,6 +76,8 @@ localizations:
 title: Web Design
 description: We build modern websites
 menu_order: 1
+updated_by: 7db4d796-e710-452b-9eb1-9bca16576c9e
+updated_at: 1770711891
 ```
 
 **After (with localizations added by this skill):**
@@ -81,17 +85,21 @@ menu_order: 1
 title: Web Design
 description: We build modern websites
 menu_order: 1
+updated_by: 7db4d796-e710-452b-9eb1-9bca16576c9e
+updated_at: 1770711891
 localizations:
   indonesian:
     title: Desain Web
     description: Kami membangun website modern
     slug: desain-web
+    updated_by: 7db4d796-e710-452b-9eb1-9bca16576c9e
+    updated_at: 1770711862
 ```
 
 **Rules for `localizations`:**
 - Only include non-default sites inside `localizations`
 - Only include fields marked `localizable: true` in the blueprint
-- Always include `title` and `slug` in each localization
+- Always include `title`, `slug`, `updated_by`, and `updated_at` in each localization
 - Non-localizable fields (e.g., `menu_order` if non-localizable) are shared from the top level automatically
 - The default site's data lives at the top level — do NOT move it into `localizations`
 - If multiple non-default sites exist, add an entry for each:
@@ -102,11 +110,27 @@ localizations:
     title: Desain Web
     description: Kami membangun website modern
     slug: desain-web
+    updated_by: 7db4d796-e710-452b-9eb1-9bca16576c9e
+    updated_at: 1770711862
   japanese:
     title: ウェブデザイン
     description: 私たちはモダンなウェブサイトを構築します
     slug: web-design
+    updated_by: 7db4d796-e710-452b-9eb1-9bca16576c9e
+    updated_at: 1770711862
 ```
+
+## Updated By / Updated At in Localizations
+
+Each localization entry MUST include:
+
+- **`updated_by`** — The `id` of the super user
+- **`updated_at`** — Unix timestamp (seconds since epoch) of the current time
+
+**Finding the super user ID:**
+1. Read the `users/` directory — it contains `{user_email_address}.yaml` files
+2. Find the first `.yaml` file that has the field `super: true`
+3. Use the `id` field value from that user file as `updated_by`
 
 ## Rules
 
@@ -119,7 +143,7 @@ localizations:
 7. **Do not create or edit templates, config, routes, PHP, or frontend files.**
 8. You may read any project file to inform your work (blueprints, sites config), but do not modify files beyond adding `localizations`.
 9. Only include fields marked `localizable: true` in the blueprint inside each localization.
-10. Always include `title` and `slug` in each localization entry.
+10. Always include `title`, `slug`, `updated_by`, and `updated_at` in each localization entry.
 11. Verify the term file exists before editing. If it does not exist, ask the user first.
 
 ## Accuracy Checks
@@ -127,6 +151,7 @@ localizations:
 Before finishing, verify:
 - [ ] Term file exists at `content/taxonomies/{taxonomy}/{slug}.yaml`
 - [ ] Only the `localizations` key was added — existing top-level fields were not modified
+- [ ] Each localization includes `updated_by` and `updated_at`
 - [ ] Each non-default site has an entry under `localizations`
 - [ ] Each localization includes `title` and `slug`
 - [ ] Only `localizable: true` fields from the blueprint are included in localizations

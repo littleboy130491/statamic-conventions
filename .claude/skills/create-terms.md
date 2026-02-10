@@ -43,16 +43,21 @@ Taxonomy terms do NOT use site subdirectories. Do NOT create files at paths like
 2. Use the fields defined in the blueprint to build the YAML content
 3. Add `title` as a required field
 4. Populate each field from the blueprint with appropriate dummy content matching its fieldtype
+5. **Always include `updated_at` and `updated_by`** — see [Updated At / Updated By](#updated-at--updated-by)
 
 ```yaml
 title: {term title}
 {field_from_blueprint}: {value matching fieldtype}
+updated_at: {unix-timestamp-now}
+updated_by: {super-user-id}
 ```
 
 ### Minimal Term (no blueprint or blueprint with title only)
 
 ```yaml
 title: {term title}
+updated_at: {unix-timestamp-now}
+updated_by: {super-user-id}
 ```
 
 ### Example
@@ -63,7 +68,21 @@ File: `content/taxonomies/categories/web-design.yaml`
 title: Web Design
 description: We build modern websites
 menu_order: 1
+updated_at: 1770714989
+updated_by: a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ```
+
+## Updated At / Updated By
+
+Every term MUST include these two fields:
+
+- **`updated_at`** — Unix timestamp (seconds since epoch) of the current time
+- **`updated_by`** — The `id` of the super user
+
+**Finding the super user ID:**
+1. Read the `users/` directory — it contains `{user_email_address}.yaml` files
+2. Find the first `.yaml` file that has the field `super: true`
+3. Use the `id` field value from that user file as `updated_by`
 
 ## Naming Convention
 

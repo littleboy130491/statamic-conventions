@@ -7,8 +7,8 @@ This skill is for **collection entry translations only**. Taxonomy term translat
 ## Scope
 
 **You MUST only create files at:**
-- `content/collections/{collection}/{non-default-site}/{slug}.md`
-- `content/collections/{collection}/{non-default-site}/{date}.{slug}.md`
+- `content/collections/{collection}/{non-default-site}/{slug}.md` or
+- `content/collections/{collection}/{non-default-site}/{YYYY-MM-DD-HHmm}.{slug}.md` (only when the blueprint has a `date` field with `localizable: true`)
 
 These paths are for non-default sites only. Do NOT create entries for the default site — use the `create-entries` skill for those.
 
@@ -48,6 +48,7 @@ Read `resources/sites.yaml` — **read only, do not modify**:
 Read the blueprint at `resources/blueprints/collections/{collection}/{blueprint}.yaml` — **read only, do not modify**:
 - Identify which fields have `localizable: true` — only these fields should appear in translation entries
 - Fields without `localizable: true` are shared from the origin and must NOT be duplicated
+- **Check for a `date` field with `localizable: true`** — if present, use the dated filename format `{YYYY-MM-DD-HHmm}.{slug}.md`. If the `date` field is absent or not localizable, use the standard `{slug}.md` format
 
 ### Step 3: Read the Origin Entry
 
@@ -59,9 +60,11 @@ Read the default site entry — **read only, do not modify**:
 
 For each non-default site, create a translation entry:
 
-**Path:** `content/collections/{collection}/{non-default-site}/{slug}.md`
+**Path:**
+- Standard: `content/collections/{collection}/{non-default-site}/{slug}.md`
+- Dated (blueprint has `date` field with `localizable: true`): `content/collections/{collection}/{non-default-site}/{YYYY-MM-DD-HHmm}.{slug}.md`
 
-Use the **same slug** as the default site entry for the filename.
+Use the **same slug** as the default site entry for the filename. Use today's date and current time for dated filenames.
 
 **Translation entry structure:**
 ```yaml
@@ -70,6 +73,8 @@ id: {new-unique-uuid}
 origin: {default-site-entry-id}
 title: {translated title}
 {localizable_field}: {translated value}
+updated_at: {unix-timestamp-now}
+updated_by: {super-user-id}
 ---
 {translated markdown body if blueprint has a content field}
 ```
@@ -112,11 +117,25 @@ id: 550e8400-e29b-41d4-a716-446655440011
 origin: 550e8400-e29b-41d4-a716-446655440010
 title: Tentang Kami
 hero_lead: Membangun kepercayaan sejak 1999
+updated_at: 1770714989
+updated_by: a1b2c3d4-e5f6-7890-abcd-ef1234567890
 ---
 Selamat datang di perusahaan kami...
 ```
 
 Only `title` and `hero_lead` appear because they are `localizable: true` in the blueprint. Non-localizable fields like `published` are shared from the origin and excluded.
+
+## Updated At / Updated By
+
+Every translation entry MUST include these two fields in the frontmatter:
+
+- **`updated_at`** — Unix timestamp (seconds since epoch) of the current time
+- **`updated_by`** — The `id` of the super user
+
+**Finding the super user ID:**
+1. Read the `users/` directory — it contains `{user_email_address}.yaml` files
+2. Find the first `.yaml` file that has the field `super: true`
+3. Use the `id` field value from that user file as `updated_by`
 
 ## Rules
 
