@@ -2,19 +2,22 @@
 
 Create Statamic translation entry files for non-default sites in a multisite project.
 
+This skill is for **collection entry translations only**. Taxonomy term translations are handled within the term file itself using the `localizations` key — use the `create-translations-terms` skill for that.
+
 ## Scope
 
 **You MUST only create files at:**
-- `content/collections/{collection}/{non-default-site-handle}/{slug}.md`
-- `content/collections/{collection}/{non-default-site-handle}/{date}.{slug}.md`
+- `content/collections/{collection}/{non-default-site}/{slug}.md`
+- `content/collections/{collection}/{non-default-site}/{date}.{slug}.md`
 
 These paths are for non-default sites only. Do NOT create entries for the default site — use the `create-entries` skill for those.
 
 Do NOT create, edit, or modify any other files — including but not limited to:
-- Default site entries (`content/collections/{collection}/{default-site-handle}/`) — use `create-entries` skill instead
+- Default site entries (`content/collections/{collection}/{default-site}/`) — use `create-entries` skill instead
+- Taxonomy term files (`content/taxonomies/`) — use `create-terms` skill instead (term translations are stored in the same file, not as separate files)
 - Blueprint files (`resources/blueprints/`) — use `create-blueprints` skill instead
 - Collection config files (`content/collections/*.yaml`) — use `create-collections` skill instead
-- Taxonomy config files (`content/taxonomies/`) — use `create-taxonomies` skill instead
+- Taxonomy config files (`content/taxonomies/*.yaml`) — use `create-taxonomies` skill instead
 - View/template files (`resources/views/`)
 - Config files (`config/`)
 - Fieldset files (`resources/fieldsets/`)
@@ -56,7 +59,7 @@ Read the default site entry — **read only, do not modify**:
 
 For each non-default site, create a translation entry:
 
-**Path:** `content/collections/{collection}/{non-default-site-handle}/{slug}.md`
+**Path:** `content/collections/{collection}/{non-default-site}/{slug}.md`
 
 Use the **same slug** as the default site entry for the filename.
 
@@ -83,7 +86,7 @@ title: {translated title}
 **Do NOT include:**
 - `sites` — only default site entries have `sites`
 - `blueprint` — inherited from origin
-- Non-localizable fields — these are shared from the origin entry automatically
+- Non-localizable fields — shared from the origin entry automatically
 
 ### Example
 
@@ -119,17 +122,18 @@ Only `title` and `hero_lead` appear because they are `localizable: true` in the 
 
 1. **Only create** `.md` entry files under non-default site directories. No other files.
 2. **Do not create or edit default site entries** — use `create-entries` skill instead.
-3. **Do not create or edit blueprints** — use `create-blueprints` skill instead.
-4. **Do not create or edit collection configs** — use `create-collections` skill instead.
-5. **Do not create or edit taxonomy configs** — use `create-taxonomies` skill instead.
-6. **Do not create or edit templates, config, routes, PHP, or frontend files.**
-7. You may read any project file to inform your work (blueprints, sites config, origin entries), but do not modify them.
-8. Output `.md` files with valid YAML frontmatter.
-9. Every translation entry MUST have a new unique UUID v4 — never reuse the origin's ID.
-10. Always set `origin` to the default site entry's `id`.
-11. Use the same slug as the default site entry for the filename.
-12. Only include fields marked `localizable: true` in the blueprint. Do not duplicate non-localizable fields.
-13. Do NOT include `sites` or `blueprint` in translation entries.
+3. **Do not create or edit taxonomy term files** — use `create-terms` skill instead. Taxonomy term translations are stored within the term file using the `localizations` key, not as separate files.
+4. **Do not create or edit blueprints** — use `create-blueprints` skill instead.
+5. **Do not create or edit collection configs** — use `create-collections` skill instead.
+6. **Do not create or edit taxonomy configs** — use `create-taxonomies` skill instead.
+7. **Do not create or edit templates, config, routes, PHP, or frontend files.**
+8. You may read any project file to inform your work (blueprints, sites config, origin entries), but do not modify them.
+9. Output `.md` files with valid YAML frontmatter.
+10. Every translation entry MUST have a new unique UUID v4 — never reuse the origin's ID.
+11. Always set `origin` to the default site entry's `id`.
+12. Use the same slug as the default site entry for the filename.
+13. Only include fields marked `localizable: true` in the blueprint. Do not duplicate non-localizable fields.
+14. Do NOT include `sites` or `blueprint` in translation entries.
 
 ## Accuracy Checks
 
@@ -141,4 +145,5 @@ Before finishing, verify:
 - [ ] Filename slug matches the default site entry's slug
 - [ ] Only `localizable: true` fields from the blueprint are included
 - [ ] `sites` and `blueprint` fields are NOT present in the translation entry
-- [ ] No default site entries, blueprints, collection configs, or other out-of-scope files were created or edited
+- [ ] No taxonomy term files were created (term translations use the `localizations` key within the term file)
+- [ ] No default site entries, blueprints, configs, or other out-of-scope files were created or edited

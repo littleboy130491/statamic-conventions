@@ -8,18 +8,21 @@ Create Statamic entry files with dummy content for collections and pages.
 - Single site: `content/collections/{collection}/{slug}.md` or `content/collections/{collection}/{date}.{slug}.md`
 - Multisite (default site only): `content/collections/{collection}/{default-site-handle}/{slug}.md` or `content/collections/{collection}/{default-site-handle}/{date}.{slug}.md`
 
+This skill is for **collection entries only**. Do NOT create taxonomy terms — use the `create-terms` skill instead.
+
 Do NOT create, edit, or modify any other files — including but not limited to:
+- Taxonomy term files (`content/taxonomies/{taxonomy}/`) — use `create-terms` skill instead
 - Translation entries for non-default sites — use `create-translations` skill instead
 - Blueprint files (`resources/blueprints/`) — use `create-blueprints` skill instead
 - Collection config files (`content/collections/*.yaml`) — use `create-collections` skill instead
-- Taxonomy config files (`content/taxonomies/`) — use `create-taxonomies` skill instead
+- Taxonomy config files (`content/taxonomies/*.yaml`) — use `create-taxonomies` skill instead
 - View/template files (`resources/views/`)
 - Config files (`config/`)
 - Fieldset files (`resources/fieldsets/`)
 - Routes, controllers, or any PHP files
 - CSS, JS, or frontend assets
 
-You may **read** other project files (e.g., `resources/sites.yaml`, blueprints, collection configs) to inform your work, but do not modify them.
+You may **read** other project files (e.g., `resources/sites.yaml`, blueprints, collection configs, existing terms) to inform your work, but do not modify them.
 
 If the task requires changes outside the allowed paths, stop and inform the user — do not make those changes yourself.
 
@@ -27,9 +30,10 @@ If the task requires changes outside the allowed paths, stop and inform the user
 
 1. **Detect multisite first** — Read `resources/sites.yaml` (read only)
 2. **Read the blueprint** — Read the blueprint at `resources/blueprints/collections/{collection}/` (read only). If no specific blueprint exists, check `resources/blueprints/default.yaml`
-3. Create `.md` file with YAML frontmatter + optional markdown content
-4. Generate UUID for `id` field
-5. **Multisite only** — Create entries for the default site only. For non-default site translations, use the `create-translations` skill
+3. **Validate relationship fields** — For any relationship field (`entries`, `terms`, `users`), verify referenced items exist before using them. See [Relationship Field Validation](#relationship-field-validation)
+4. Create `.md` file with YAML frontmatter + optional markdown content
+5. Generate UUID for `id` field
+6. **Multisite only** — Create entries for the default site only. For non-default site translations, use the `create-translations` skill
 
 ## Entry Paths
 
@@ -78,6 +82,26 @@ sites:
 
 The `sites` field lists all site keys from `resources/sites.yaml` where this entry should be available. Only include `sites` on default site entries.
 
+## Relationship Field Validation
+
+When a blueprint field is a relationship type (e.g., `entries`, `terms`, `users`), you MUST verify that the referenced items actually exist before using them as values.
+
+**Check these locations based on the relationship type:**
+
+| Relationship type | Where to check (single site) | Where to check (multisite) |
+|---|---|---|
+| **Collection entries** | `content/collections/{collection_handle}/` — `.md` files | `content/collections/{collection_handle}/{site_handle}/` — `.md` files |
+| **Taxonomy terms** | `content/taxonomies/{taxonomy_handle}/` — `.yaml` files | `content/taxonomies/{taxonomy_handle}/` — `.yaml` files |
+| **Users** | `users/` — `.yaml` files | `users/` — `.yaml` files |
+
+**Steps:**
+1. Identify relationship fields in the blueprint (fieldtypes like `entries`, `terms`, `users`, or any field with a `collections`, `taxonomies`, or `type: users` config)
+2. Read the relevant directory to discover existing items — **read only, do not modify or create**
+3. Only reference items that actually exist — never invent slugs or IDs that don't correspond to real files
+4. If no valid items exist to reference, leave the field empty or as an empty array (`[]`)
+
+Do NOT create taxonomy terms to satisfy relationship fields — use the `create-terms` skill for that. If terms do not exist and are needed, ask the user whether they want to create them first.
+
 ## Generating UUIDs
 
 Use standard UUID v4 format:
@@ -101,37 +125,21 @@ date: '2024-01-15'
 ---
 ```
 
-## Relationship Field Validation
-
-When a blueprint field is a relationship type (e.g., `entries`, `terms`, `users`, `collections`), you MUST verify that the referenced items actually exist before using them as values.
-
-**Check these locations based on the relationship type:**
-
-| Relationship type | Where to check (single site) | Where to check (multisite) |
-|---|---|---|
-| **Users** | `users/` — `.yaml` files | `users/` — `.yaml` files |
-| **Taxonomy terms** | `content/taxonomies/{taxonomy_handle}/` — `.yaml` files | `content/taxonomies/{taxonomy_handle}/` — `.yaml` files |
-| **Collection entries** | `content/collections/{collection_handle}/` — `.md` files | `content/collections/{collection_handle}/{site_handle}/` — `.md` files |
-
-**Steps:**
-1. Identify relationship fields in the blueprint (fieldtypes like `entries`, `terms`, `users`, `taxonomies`, or any field with a `collections`, `taxonomies`, or `type: users` config)
-2. Read the relevant directory to discover existing items
-3. Only reference items that actually exist — never invent slugs or IDs that don't correspond to real files
-4. If no valid items exist to reference, leave the field empty or as an empty array (`[]`)
-
 ## Rules
 
 1. **Only create** `.md` entry files at the paths listed in [Entry Paths](#entry-paths). No other files.
-2. **Do not create translation entries** for non-default sites — use `create-translations` skill instead.
-3. **Do not create or edit blueprints** — use `create-blueprints` skill instead.
-4. **Do not create or edit collection configs** — use `create-collections` skill instead.
-5. **Do not create or edit taxonomy configs** — use `create-taxonomies` skill instead.
-6. **Do not create or edit templates, config, routes, PHP, or frontend files.**
-7. You may read any project file to inform your work (blueprints, sites config, collection configs), but do not modify them.
-8. Output `.md` files with valid YAML frontmatter.
-9. Every entry MUST have a unique UUID v4 in the `id` field.
-10. Filename is slug-based, NOT UUID-based.
-11. If multisite is enabled, include the `sites` field listing all site keys. Only default site entries get `sites`.
+2. **Do not create taxonomy terms** — use `create-terms` skill instead.
+3. **Do not create translation entries** for non-default sites — use `create-translations` skill instead.
+4. **Do not create or edit blueprints** — use `create-blueprints` skill instead.
+5. **Do not create or edit collection configs** — use `create-collections` skill instead.
+6. **Do not create or edit taxonomy configs** — use `create-taxonomies` skill instead.
+7. **Do not create or edit templates, config, routes, PHP, or frontend files.**
+8. You may read any project file to inform your work (blueprints, sites config, collection configs, existing terms/entries), but do not modify them.
+9. Output `.md` files with valid YAML frontmatter.
+10. Every entry MUST have a unique UUID v4 in the `id` field.
+11. Filename is slug-based, NOT UUID-based.
+12. If multisite is enabled, include the `sites` field listing all site keys. Only default site entries get `sites`.
+13. Relationship fields must only reference items that actually exist — never invent references.
 
 ## Accuracy Checks
 
@@ -142,6 +150,7 @@ Before finishing, verify:
 - [ ] Filename uses slug, not UUID
 - [ ] Dated entries have date in both filename and frontmatter
 - [ ] If multisite: entry is under the default site directory only, with `sites` field listing all site keys
+- [ ] Relationship fields only reference items that actually exist in the project
+- [ ] No taxonomy term files were created (use `create-terms` for those)
 - [ ] No translation entries for non-default sites were created (use `create-translations` for those)
-- [ ] Relationship fields only reference items that actually exist in the project (users, taxonomy terms, collection entries)
 - [ ] No blueprints, collection configs, templates, or other out-of-scope files were created or edited

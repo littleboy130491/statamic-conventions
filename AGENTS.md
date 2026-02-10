@@ -133,20 +133,42 @@ Wait for the user to confirm before creating anything.
 **Skill:** `create-entries`
 **Output:** `content/collections/{collection}/{site}/{slug}.md`
 
-Create example/dummy entries for each collection so the user has sample content to work with.
+Create example/dummy entries for **collections only**. Do NOT create taxonomy terms — use `create-terms` for those.
 
 For multisite projects, create entries for the default site only. Recommend `create-translations` for non-default sites.
 
-### Step 9: Create Translations (Optional, Multisite Only)
+### Step 9: Create Terms (Optional)
+
+**Skill:** `create-terms`
+**Output:** `content/taxonomies/{taxonomy}/{slug}.yaml`
+
+Create example/dummy term files for **taxonomies only**. Do NOT create collection entries — use `create-entries` for those.
+
+For multisite projects, term files do not use site subdirectories. Recommend `create-translation-terms` for adding translations to terms.
+
+### Step 10: Create Translations (Optional, Multisite Only)
 
 **Skill:** `create-translations`
 **Output:** `content/collections/{collection}/{non-default-site}/{slug}.md`
 
-For each default-site entry created in Step 8, create translation entries for all non-default sites.
+For each default-site entry created in Step 8, create translation entries for all non-default sites. This skill is for **collection entry translations only**.
 
 Only include fields marked `localizable: true` in the blueprint.
 
-### Step 10: Create Globals (Optional)
+Do NOT use this for taxonomy terms — use `create-translation-terms` instead.
+
+### Step 11: Create Translation Terms (Optional, Multisite Only)
+
+**Skill:** `create-translation-terms`
+**Output:** Edits existing `content/taxonomies/{taxonomy}/{slug}.yaml` (adds `localizations` key)
+
+For each term created in Step 9, add translations for all non-default sites by adding the `localizations` key to existing term files. This skill is for **taxonomy term translations only**.
+
+Taxonomy terms store translations within the same file (via `localizations`), unlike collection entries which use separate files per site.
+
+Do NOT use this for collection entries — use `create-translations` instead.
+
+### Step 12: Create Globals (Optional)
 
 **Skill:** `create-globals`
 **Output:** `content/globals/{handle}.yaml` + `content/globals/{site}/{handle}.yaml`
@@ -155,14 +177,14 @@ For each schema file with `schema_type: global`, create the global set config an
 
 Also recommend creating global blueprints using `create-blueprints`.
 
-### Step 11: Create Forms (Optional)
+### Step 13: Create Forms (Optional)
 
 **Skill:** `create-forms`
 **Output:** `resources/forms/{handle}.yaml` + `resources/blueprints/forms/{handle}.yaml`
 
 For each schema file with `schema_type: form`, create the form config, blueprint, and email templates.
 
-### Step 12: Create Navigations (Optional)
+### Step 14: Create Navigations (Optional)
 
 **Skill:** `create-navigations`
 **Output:** `content/navigation/{handle}.yaml` + `content/trees/navigation/{handle}.yaml`
@@ -177,43 +199,49 @@ For each schema file with `schema_type: navigation`, create the navigation confi
 User describes what they need
         |
         v
-[1] create-schema          --> schemas/*.md
+[1] create-schema              --> schemas/*.md
         |
         v
     Present next steps to user, wait for confirmation
         |
         v
-[2] create-collections     --> user confirms --> execute
+[2] create-collections         --> user confirms --> execute
         |
         v
-[3] create-blueprints      --> user confirms --> execute
+[3] create-blueprints          --> user confirms --> execute
         |
         v
-[4] mount-collections      --> user confirms --> execute
+[4] mount-collections          --> user confirms --> execute
         |
         v
-[5] create-taxonomies      --> user confirms --> execute
+[5] create-taxonomies          --> user confirms --> execute
         |
         v
-[6] attach-taxonomies      --> user confirms --> execute
+[6] attach-taxonomies          --> user confirms --> execute
         |
         v
-[7] resolve relationships  --> user confirms --> repeat Steps 2–6 for missing collections
+[7] resolve relationships      --> user confirms --> repeat Steps 2–6 for missing collections
         |
         v
-[8] create-entries          --> user confirms --> execute
+[8] create-entries             --> user confirms --> execute (collections only)
         |
         v
-[9] create-translations    --> user confirms --> execute
+[9] create-terms               --> user confirms --> execute (taxonomy terms only)
         |
         v
-[10] create-globals         --> user confirms --> execute
+[10] create-translations       --> user confirms --> execute (collection translations only)
         |
         v
-[11] create-forms           --> user confirms --> execute
+[11] create-translation-terms  --> user confirms --> execute (term translations only)
         |
         v
-[12] create-navigations     --> user confirms --> execute
+[12] create-globals            --> user confirms --> execute
+        |
+        v
+[13] create-forms              --> user confirms --> execute
+        |
+        v
+[14] create-navigations        --> user confirms --> execute
 ```
 
 ## Key Rules
