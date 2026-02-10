@@ -1,0 +1,11 @@
+title: Tags
+template: tags/show
+layout: tags/layout
+revisions: true
+route: /tags/{slug}
+preview_targets:
+  -
+    label: Entry
+    url: '{permalink}'
+    refresh: true
+term_template: posts/show

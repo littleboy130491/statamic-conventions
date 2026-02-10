@@ -1,0 +1,24 @@
+title: Posts
+icon: collections
+template: posts/show
+layout: posts/layout
+revisions: true
+route: /blog/{slug}
+date: true
+sort_by: date
+sort_dir: desc
+date_behavior:
+  past: public
+  future: private
+preview_targets:
+  -
+    label: Entry
+    url: '{permalink}'
+    refresh: true
+structure:
+  root: false
+  max_depth: 1
+  slugs: true
+taxonomies:
+  - categories
+  - tags

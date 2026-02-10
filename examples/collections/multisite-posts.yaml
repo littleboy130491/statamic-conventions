@@ -1,0 +1,29 @@
+title: Posts
+icon: collections
+template: posts/show
+layout: posts/layout
+revisions: true
+route: /blog/{slug}
+date: true
+sort_by: date
+sort_dir: desc
+date_behavior:
+  past: public
+  future: private
+preview_targets:
+  -
+    label: Entry
+    url: '{permalink}'
+    refresh: true
+structure:
+  root: false
+  max_depth: 1
+  slugs: true
+taxonomies:
+  - categories
+  - tags
+sites:
+  - english
+  - indonesian
+propagate: true
+mount: 3e4f5a6b-7c8d-4e9f-0a1b-2c3d4e5f6a7b
