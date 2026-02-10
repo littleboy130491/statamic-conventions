@@ -72,15 +72,11 @@ blueprint: {blueprint handle}
 id: {generated-uuid}
 title: {entry title}
 blueprint: {blueprint handle}
-sites:
-  - {site_1}
-  - {site_2}
 {field_from_blueprint}: {value matching fieldtype}
 ---
 {markdown body if blueprint has a content field}
 ```
 
-The `sites` field lists all site keys from `resources/sites.yaml` where this entry should be available. Only include `sites` on default site entries.
 
 ## Relationship Field Validation
 
@@ -138,8 +134,7 @@ date: '2024-01-15'
 9. Output `.md` files with valid YAML frontmatter.
 10. Every entry MUST have a unique UUID v4 in the `id` field.
 11. Filename is slug-based, NOT UUID-based.
-12. If multisite is enabled, include the `sites` field listing all site keys. Only default site entries get `sites`.
-13. Relationship fields must only reference items that actually exist — never invent references.
+12. Relationship fields must only reference items that actually exist — never invent references.
 
 ## Accuracy Checks
 
@@ -149,7 +144,6 @@ Before finishing, verify:
 - [ ] `id` field contains a unique UUID v4
 - [ ] Filename uses slug, not UUID
 - [ ] Dated entries have date in both filename and frontmatter
-- [ ] If multisite: entry is under the default site directory only, with `sites` field listing all site keys
 - [ ] Relationship fields only reference items that actually exist in the project
 - [ ] No taxonomy term files were created (use `create-terms` for those)
 - [ ] No translation entries for non-default sites were created (use `create-translations` for those)
