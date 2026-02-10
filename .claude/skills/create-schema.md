@@ -58,6 +58,7 @@ structure: {true/false}
 structure_max_depth: {number, only if structure: true}
 mount: {page slug, or omit if none}
 taxonomy_relationship: {- handle1 - handle2, or omit if none}
+collection_relationship: {- handle1 - handle2, or omit if none}
 multisite: {true/false}
 sites: {- site1 - site2, only if multisite: true}
 
@@ -78,6 +79,7 @@ dated: true
 structure: false
 mount: blog
 taxonomy_relationship: - categories - tags
+collection_relationship: - team_members
 multisite: true
 sites: - english - indonesian
 
@@ -88,7 +90,7 @@ title | text | required | localizable
 featured_image | assets | required | localizable | max_files: 1
 excerpt | textarea | optional | localizable | character_limit: 300
 content | bard | optional | localizable | h2, h3, bold, italic, unorderedlist, link, image
-author | users | optional | | max_items: 1
+author | entries | optional | | collections: team_members, max_items: 1
 ```
 
 If a collection has **multiple blueprints**, list them sequentially separated by `---`:
@@ -101,6 +103,7 @@ route: /{parent_uri}/{slug}
 dated: false
 structure: true
 structure_max_depth: 3
+collection_relationship: - blog_posts
 multisite: true
 sites: - english - indonesian
 
@@ -285,9 +288,10 @@ team_members | grid | optional | localizable
 3. **Always detect multisite first.** If multisite, add `localizable` to all user-facing text, content, and asset fields.
 4. **Use snake_case** for all handles.
 5. **Use the exact format** shown above — key-value header, pipe-delimited fields.
-6. **Omit keys that don't apply** — e.g., don't include `mount:` if there's no mount, don't include `localizable` column if single site.
-7. **If requirements are unclear**, ask the user before writing. Do not guess.
-8. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
+6. **Omit keys that don't apply** — e.g., don't include `mount:` if there's no mount, don't include `localizable` column if single site, don't include `collection_relationship` if no entries fields reference other collections.
+7. **If a collection has `entries` fields referencing other collections**, list those collection handles in `collection_relationship`. This signals downstream skills to create those collections if they don't already exist.
+8. **If requirements are unclear**, ask the user before writing. Do not guess.
+9. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
 
 ## Accuracy Checks
 
@@ -296,4 +300,5 @@ Before finishing, verify:
 - [ ] Each file has `schema_name` and `schema_type`
 - [ ] Each collection schema has at least one blueprint with fields
 - [ ] Multisite schemas have `localizable` on appropriate fields
+- [ ] Collections with `entries` fields referencing other collections have matching `collection_relationship` list
 - [ ] No Statamic files were created — only schema `.md` files
