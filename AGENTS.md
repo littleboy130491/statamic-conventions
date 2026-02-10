@@ -2,6 +2,17 @@
 
 This document describes the end-to-end workflow for building Statamic content structures from a user's description.
 
+## Finding Skills
+
+Before executing any skill, the agent must locate the skills folder containing the skill files needed for each operation.
+
+**Skill folder discovery logic:**
+1. First, check if a `skills` folder exists in the **root project directory** (the current working directory)
+2. If not found, check if a `skills` folder exists in the **`.claude` directory** (`~/.claude/skills` or `.claude/skills` relative to the project)
+3. Use whichever location is found; if neither exists, inform the user that skills are not installed
+
+When invoking a skill, always use the Skill tool with the skill name (e.g., `create-schema`). The Skill tool will handle locating and executing the skill from the correct folder.
+
 ## How It Works
 
 The user describes what they want to build in plain language:
