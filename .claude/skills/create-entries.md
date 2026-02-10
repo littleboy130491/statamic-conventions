@@ -101,6 +101,24 @@ date: '2024-01-15'
 ---
 ```
 
+## Relationship Field Validation
+
+When a blueprint field is a relationship type (e.g., `entries`, `terms`, `users`, `collections`), you MUST verify that the referenced items actually exist before using them as values.
+
+**Check these locations based on the relationship type:**
+
+| Relationship type | Where to check (single site) | Where to check (multisite) |
+|---|---|---|
+| **Users** | `users/` — `.yaml` files | `users/` — `.yaml` files |
+| **Taxonomy terms** | `content/taxonomies/{taxonomy_handle}/` — `.yaml` files | `content/taxonomies/{taxonomy_handle}/` — `.yaml` files |
+| **Collection entries** | `content/collections/{collection_handle}/` — `.md` files | `content/collections/{collection_handle}/{site_handle}/` — `.md` files |
+
+**Steps:**
+1. Identify relationship fields in the blueprint (fieldtypes like `entries`, `terms`, `users`, `taxonomies`, or any field with a `collections`, `taxonomies`, or `type: users` config)
+2. Read the relevant directory to discover existing items
+3. Only reference items that actually exist — never invent slugs or IDs that don't correspond to real files
+4. If no valid items exist to reference, leave the field empty or as an empty array (`[]`)
+
 ## Rules
 
 1. **Only create** `.md` entry files at the paths listed in [Entry Paths](#entry-paths). No other files.
@@ -125,4 +143,5 @@ Before finishing, verify:
 - [ ] Dated entries have date in both filename and frontmatter
 - [ ] If multisite: entry is under the default site directory only, with `sites` field listing all site keys
 - [ ] No translation entries for non-default sites were created (use `create-translations` for those)
+- [ ] Relationship fields only reference items that actually exist in the project (users, taxonomy terms, collection entries)
 - [ ] No blueprints, collection configs, templates, or other out-of-scope files were created or edited
