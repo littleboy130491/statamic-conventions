@@ -2,11 +2,25 @@
 
 Create or update Statamic blueprints for collections, taxonomies, globals, forms, navigation, assets, and users.
 
+## Scope
+
+**You MUST only create or edit `.yaml` files within `resources/blueprints/` or `resources/fieldsets/`.**
+
+Do NOT create, edit, or modify any other files — including but not limited to:
+- Content/entry files (`content/collections/`, `content/taxonomies/`, etc.)
+- Collection configuration files (`content/collections/*.yaml`)
+- View/template files (`resources/views/`)
+- Config files (`config/`)
+- Routes, controllers, or any PHP files
+- CSS, JS, or frontend assets
+
+If the task requires changes outside `resources/blueprints/` or `resources/fieldsets/`, stop and inform the user — do not make those changes yourself.
+
 ## Quick Start
 
-1. Identify the blueprint type and location
-2. Create YAML file with tabs, sections, and fields
-3. Match blueprint handle to content handle where required
+1. Identify the blueprint type and location from the table below
+2. Create the YAML file with tabs, sections, and fields
+3. Match the blueprint handle to the content handle where required (forms, navigation, globals)
 
 ## Blueprint Locations
 
@@ -20,23 +34,25 @@ Create or update Statamic blueprints for collections, taxonomies, globals, forms
 | Assets | `resources/blueprints/assets/{handle}.yaml` |
 | Users | `resources/blueprints/user.yaml` |
 
+Do NOT create directories or files outside these paths.
+
 ## Blueprint Structure
 
-Every blueprint has a `title` and `tabs`. Use exactly these 4 tabs in this order:
+Every blueprint MUST have a `title` and `tabs`. Use exactly these 4 tabs in this order:
 
 | Tab | Purpose | Fields |
 |-----|---------|--------|
 | `main` | Primary content | title, content/bard, excerpt, featured_image, and other content fields |
 | `sidebar` | Meta & relationships | author, categories, tags, toggles, slug, date, and other meta fields |
-| `SEO Meta` | SEO Pro addon | Hardcoded — always include as-is |
-| `SEO Previews` | SEO Pro addon | Hardcoded — always include as-is |
+| `SEO Meta` | SEO Pro addon | Hardcoded — always include exactly as shown below |
+| `SEO Previews` | SEO Pro addon | Hardcoded — always include exactly as shown below |
 
 **How to build:**
 
 1. `title` — Set to the blueprint display name (e.g., "Post", "Page", "Product")
 2. `main` tab — Add sections with content fields. Each section can have a `display` name and `instructions`
 3. `sidebar` tab — Add a section with meta/relationship fields
-4. `SEO Meta` and `SEO Previews` tabs — Always copy these exactly:
+4. `SEO Meta` and `SEO Previews` tabs — Copy these exactly as-is, do not modify:
 
 ```yaml
   'SEO Meta':
@@ -70,6 +86,10 @@ Every blueprint has a `title` and `tabs`. Use exactly these 4 tabs in this order
 
 ## Field Definition
 
+Each field follows this structure. Only include properties that are needed — omit defaults.
+
+**Before writing any fields**, check if the project uses multisite (see [Multisite & Localization](#multisite--localization)). If it does, you MUST add `localizable: true` to every field unless it explicitly qualifies for an exception.
+
 ```yaml
 -
   handle: field_name
@@ -82,7 +102,7 @@ Every blueprint has a `title` and `tabs`. Use exactly these 4 tabs in this order
       - required
       - min:3
     default: Default value
-    localizable: true
+    localizable: true          # REQUIRED if multisite is enabled — do not omit
     visibility: visible
     width: 50
     if:
@@ -234,7 +254,7 @@ fields:
 
 ## Fieldsets (Reusable)
 
-**Location:** `resources/fieldsets/{handle}.yaml`
+**Location:** `resources/fieldsets/{handle}.yaml` — this is the only other path you may write to.
 
 **Create Fieldset:**
 ```yaml
@@ -310,47 +330,69 @@ unless:
 
 ## Multisite & Localization
 
-When the project uses multisite, **all fields should be `localizable: true` by default**. This ensures each site/locale can have its own content. Only set `localizable: false` for fields that must share the same value across all sites (e.g., structural settings, internal flags).
+**This check is mandatory before writing any blueprint.**
 
-**Default behavior:** `localizable: true` on every field unless there is a specific reason not to.
+### Step 1 — Detect multisite
 
-**Detection:** Check for multisite configuration in `config/statamic/sites.php` or the presence of multiple sites in `resources/sites`. If multisite is enabled, apply the localizable default.
+Before creating or editing any blueprint, read `config/statamic/sites.php` (read only — do not modify). If it defines more than one site, or if `resources/sites` contains multiple directories, the project uses multisite.
+
+### Step 2 — Apply `localizable: true` to every field
+
+If multisite is enabled, you MUST add `localizable: true` to **every single field** in the blueprint. Do not skip this property on any field. The only permitted exceptions are listed below — if a field does not match an exception, it MUST have `localizable: true`.
 
 ```yaml
-# Multisite: default for all fields
+# Default for EVERY field when multisite is enabled
 field:
   type: text
   localizable: true
 
-# Exception: field shared across all sites
+# Exception — only if the field meets a criteria below
 field:
   type: toggle
-  localizable: false  # Same value across all sites
+  localizable: false
 ```
 
-**Fields typically NOT localized:**
-- Internal toggles or settings shared across sites
-- Relationship fields where the same entry should be referenced everywhere
-- Structural/layout fields (e.g., template selection)
+### Exceptions — fields that MAY use `localizable: false`
 
-**Fields that should always be localized:**
-- title, content/bard, textarea, excerpt — any user-facing text
-- slug — so each locale can have its own URL
-- assets/images — different images per locale if needed
-- SEO fields — different meta per locale
-- date fields — if publication dates differ per locale
+A field may use `localizable: false` only if it meets one of these criteria:
+- It is an internal toggle or setting that must be identical across all sites (e.g., a "featured" flag that controls homepage logic globally)
+- It is a relationship field where the same entry must be referenced in every locale
+- It is a structural/layout field (e.g., template selection) that does not change per locale
 
-## Boundaries
+If you are unsure, default to `localizable: true`.
 
-- Blueprint handles must match content handles for forms, navigation, globals
-- Do NOT create content here — Use respective create skills
+### Fields that MUST always be localized
+
+These field types must always have `localizable: true` — no exceptions:
+- `title`, `bard`, `textarea`, `markdown`, `text` — any user-facing text
+- `slug` — each locale needs its own URL
+- `assets` — different images/files per locale
+- SEO fields (`seo_pro`, `seo_pro_previews`)
+- `date` — if publication dates may differ per locale
+
+## Rules
+
+1. **Only write to** `resources/blueprints/` and `resources/fieldsets/`. No exceptions.
+2. **Do not create content entries, templates, config, routes, or any non-blueprint file.**
+3. **Before writing any blueprint**, check if multisite is enabled. If it is, every field MUST include `localizable: true` unless it qualifies for a specific exception listed in [Multisite & Localization](#multisite--localization).
+4. Blueprint handles must match content handles for forms, navigation, and globals.
+5. Output valid YAML only. Tabs contain sections, sections contain fields.
+6. Field `handle` is the key used in templates — use snake_case.
+7. Always include all 4 tabs (`main`, `sidebar`, `SEO Meta`, `SEO Previews`).
+8. Copy `SEO Meta` and `SEO Previews` tabs verbatim — do not alter them.
+9. You may read other project files (config, existing blueprints, content) to inform your work, but do not modify them.
 
 ## Accuracy Checks
 
-- Blueprint is YAML format
-- Tabs contain sections, sections contain fields
-- Field handle is the key used in templates
-- Required fields use `validate: [required]` or `required: true`
+Before finishing, verify:
+- [ ] File is valid YAML
+- [ ] File path matches the correct blueprint location from the table above
+- [ ] All 4 tabs are present in the correct order
+- [ ] SEO tabs are copied exactly as specified
+- [ ] No files were created or edited outside `resources/blueprints/` or `resources/fieldsets/`
+- [ ] If multisite is enabled: every field has `localizable: true` unless it qualifies for a listed exception
+- [ ] Required fields use `validate: [required]`
+- [ ] Field handles use snake_case
 
 ## Quick Reference
 

@@ -28,6 +28,7 @@ Create Statamic entry files with dummy content for collections and pages.
 4. Populate each field from the blueprint with appropriate dummy content matching its fieldtype
 5. If the blueprint has a `bard` or `markdown` field named `content`, place that content after the closing `---` as markdown body
 
+**Single site:**
 ```yaml
 ---
 id: {generated-uuid}
@@ -37,6 +38,22 @@ blueprint: {blueprint handle}
 ---
 {markdown body if blueprint has a content field}
 ```
+
+**Multisite (default site entry):**
+```yaml
+---
+id: {generated-uuid}
+title: {entry title}
+blueprint: {blueprint handle}
+sites:
+  - {site_1}
+  - {site_2}
+{field_from_blueprint}: {value matching fieldtype}
+---
+{markdown body if blueprint has a content field}
+```
+
+The `sites` field lists all site keys from `resources/sites.yaml` where this entry should be available. Only include `sites` on default site entries — translation entries do NOT get `sites`.
 
 
 ## Generating UUIDs
@@ -80,6 +97,9 @@ To create a translation entry for a non-default site:
 id: 550e8400-e29b-41d4-a716-446655440010
 title: About Us
 blueprint: about
+sites:
+  - english
+  - indonesian
 published: true
 hero_lead: Building trust since 1999
 ---
