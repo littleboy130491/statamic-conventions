@@ -1,12 +1,13 @@
-# Create Blueprints
+# Create Fieldsets
 
-Create or update Statamic blueprints for collections, taxonomies, globals, forms, navigation, assets, and users.
+Create or update Statamic fieldsets — reusable field groups that can be imported into blueprints.
 
 ## Scope
 
-**You MUST only create or edit `.yaml` files within `resources/blueprints/`.**
+**You MUST only create or edit `.yaml` files within `resources/fieldsets/`.**
 
 Do NOT create, edit, or modify any other files — including but not limited to:
+- Blueprint files (`resources/blueprints/`)
 - Content/entry files (`content/collections/`, `content/taxonomies/`, etc.)
 - Collection configuration files (`content/collections/*.yaml`)
 - View/template files (`resources/views/`)
@@ -14,74 +15,39 @@ Do NOT create, edit, or modify any other files — including but not limited to:
 - Routes, controllers, or any PHP files
 - CSS, JS, or frontend assets
 
-If the task requires changes outside `resources/blueprints/`, stop and inform the user — do not make those changes yourself.
+If the task requires changes outside `resources/fieldsets/`, stop and inform the user — do not make those changes yourself.
 
 ## Quick Start
 
-1. Identify the blueprint type and location from the table below
-2. Create the YAML file with tabs, sections, and fields
-3. Match the blueprint handle to the content handle where required (forms, navigation, globals)
+1. Determine a descriptive handle for the fieldset (snake_case)
+2. Create the YAML file at `resources/fieldsets/{handle}.yaml`
+3. Define the reusable fields
 
-## Blueprint Locations
+## Fieldset Location
 
 | Type | Path |
 |------|------|
-| Collections | `resources/blueprints/collections/{collection}/{handle}.yaml` |
-| Taxonomies | `resources/blueprints/taxonomies/{taxonomy}/{handle}.yaml` |
-| Globals | `resources/blueprints/globals/{handle}.yaml` |
-| Forms | `resources/blueprints/forms/{handle}.yaml` |
-| Navigation | `resources/blueprints/navigation/{handle}.yaml` |
-| Assets | `resources/blueprints/assets/{handle}.yaml` |
-| Users | `resources/blueprints/user.yaml` |
+| Fieldsets | `resources/fieldsets/{handle}.yaml` |
 
-Do NOT create directories or files outside these paths.
+Do NOT create directories or files outside this path.
 
-## Blueprint Structure
+## Fieldset Structure
 
-Every blueprint MUST have a `title` and `tabs`. Use exactly these 4 tabs in this order:
-
-| Tab | Purpose | Fields |
-|-----|---------|--------|
-| `main` | Primary content | title, content/bard, excerpt, featured_image, and other content fields |
-| `sidebar` | Meta & relationships | author, categories, tags, toggles, slug, date, and other meta fields |
-| `SEO Meta` | SEO Pro addon | Hardcoded — always include exactly as shown below |
-| `SEO Previews` | SEO Pro addon | Hardcoded — always include exactly as shown below |
-
-**How to build:**
-
-1. `title` — Set to the blueprint display name (e.g., "Post", "Page", "Product")
-2. `main` tab — Add sections with content fields. Each section can have a `display` name and `instructions`
-3. `sidebar` tab — Add a section with meta/relationship fields
-4. `SEO Meta` and `SEO Previews` tabs — Copy these exactly as-is, do not modify:
+Every fieldset MUST have a `title` and `fields` array.
 
 ```yaml
-  'SEO Meta':
-    display: 'SEO Meta'
-    sections:
-      -
-        fields:
-          -
-            handle: seo
-            field:
-              type: seo_pro
-              listable: false
-              display: SEO
-              localizable: false
-  'SEO Previews':
-    display: 'SEO Previews'
-    sections:
-      -
-        fields:
-          -
-            handle: seo_previews
-            field:
-              type: seo_pro_previews
-              listable: false
-              display: 'SEO Previews'
-              localizable: true
-              hide_display: true
-              unless:
-                seo.enabled: 'equals false'
+title: 'Fieldset Name'
+fields:
+  -
+    handle: field_name
+    field:
+      type: text
+      display: Field Label
+  -
+    handle: another_field
+    field:
+      type: textarea
+      display: Another Field
 ```
 
 ## Field Definition
@@ -252,17 +218,6 @@ fields:
       type: text
 ```
 
-## Importing Fieldsets
-
-Fieldsets are reusable field groups stored in `resources/fieldsets/`. To use a fieldset in a blueprint, import it within a section's `fields` array. Do NOT create or edit fieldset files from this skill — use the `create-fieldsets` skill instead.
-
-```yaml
-fields:
-  - import: fieldset_handle
-  - import: fieldset_handle
-    prefix: page_  # Optional prefix to avoid handle collisions
-```
-
 ## Validation Rules
 
 ```yaml
@@ -319,15 +274,15 @@ unless:
 
 ## Multisite & Localization
 
-**This check is mandatory before writing any blueprint.**
+**This check is mandatory before writing any fieldset.**
 
 ### Step 1 — Detect multisite
 
-Before creating or editing any blueprint, read `config/statamic/sites.php` (read only — do not modify). If it defines more than one site, or if `resources/sites` contains multiple directories, the project uses multisite.
+Before creating or editing any fieldset, read `config/statamic/sites.php` (read only — do not modify). If it defines more than one site, or if `resources/sites` contains multiple directories, the project uses multisite.
 
 ### Step 2 — Apply `localizable: true` to every field
 
-If multisite is enabled, you MUST add `localizable: true` to **every single field** in the blueprint. Do not skip this property on any field. The only permitted exceptions are listed below — if a field does not match an exception, it MUST have `localizable: true`.
+If multisite is enabled, you MUST add `localizable: true` to **every single field** in the fieldset. Do not skip this property on any field. The only permitted exceptions are listed below — if a field does not match an exception, it MUST have `localizable: true`.
 
 ```yaml
 # Default for EVERY field when multisite is enabled
@@ -356,29 +311,24 @@ These field types must always have `localizable: true` — no exceptions:
 - `title`, `bard`, `textarea`, `markdown`, `text` — any user-facing text
 - `slug` — each locale needs its own URL
 - `assets` — different images/files per locale
-- SEO fields (`seo_pro`, `seo_pro_previews`)
 - `date` — if publication dates may differ per locale
 
 ## Rules
 
-1. **Only write to** `resources/blueprints/`. No exceptions.
-2. **Do not create content entries, templates, config, routes, or any non-blueprint file.**
-3. **Before writing any blueprint**, check if multisite is enabled. If it is, every field MUST include `localizable: true` unless it qualifies for a specific exception listed in [Multisite & Localization](#multisite--localization).
-4. Blueprint handles must match content handles for forms, navigation, and globals.
-5. Output valid YAML only. Tabs contain sections, sections contain fields.
-6. Field `handle` is the key used in templates — use snake_case.
-7. Always include all 4 tabs (`main`, `sidebar`, `SEO Meta`, `SEO Previews`).
-8. Copy `SEO Meta` and `SEO Previews` tabs verbatim — do not alter them.
-9. You may read other project files (config, existing blueprints, content) to inform your work, but do not modify them.
+1. **Only write to** `resources/fieldsets/`. No exceptions.
+2. **Do not create content entries, blueprints, templates, config, routes, or any non-fieldset file.**
+3. **Before writing any fieldset**, check if multisite is enabled. If it is, every field MUST include `localizable: true` unless it qualifies for a specific exception listed in [Multisite & Localization](#multisite--localization).
+4. Output valid YAML only. Fieldsets contain a `title` and a `fields` array.
+5. Field `handle` is the key used in templates — use snake_case.
+6. You may read other project files (config, existing blueprints, fieldsets, content) to inform your work, but do not modify them.
 
 ## Accuracy Checks
 
 Before finishing, verify:
 - [ ] File is valid YAML
-- [ ] File path matches the correct blueprint location from the table above
-- [ ] All 4 tabs are present in the correct order
-- [ ] SEO tabs are copied exactly as specified
-- [ ] No files were created or edited outside `resources/blueprints/`
+- [ ] File is located at `resources/fieldsets/{handle}.yaml`
+- [ ] Fieldset has a `title` and `fields` array
+- [ ] No files were created or edited outside `resources/fieldsets/`
 - [ ] If multisite is enabled: every field has `localizable: true` unless it qualifies for a listed exception
 - [ ] Required fields use `validate: [required]`
 - [ ] Field handles use snake_case
