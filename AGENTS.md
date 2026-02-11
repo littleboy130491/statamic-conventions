@@ -21,7 +21,7 @@ The user describes what they want to build in plain language:
 > "I need a portfolio site with projects, services, and a team section"
 > "Build a blog with categories and tags"
 
-The agent generates schema files, then **guides the user step-by-step** through each downstream skill. The agent does NOT automatically execute steps — it recommends the next step and waits for the user to confirm before proceeding.
+The agent generates schema files, then **guides the user through each downstream skill**. The user can choose to execute steps one at a time or run multiple (or all) steps at once in batch mode.
 
 ---
 
@@ -52,9 +52,11 @@ Do not create any Statamic files in this step — only schema `.md` files.
 > 6. Create entries — sample entries for blog_posts
 > 7. Create globals — `site_settings`
 >
+> You can run these one at a time, or say **"run all"** to execute all steps automatically.
+>
 > Which step would you like to run next?
 
-Wait for the user to tell you which step to execute.
+Wait for the user to tell you which step to execute, or whether they want to run all (or a subset) at once.
 
 ### Step 2: Create Collections
 
@@ -193,6 +195,45 @@ For each schema file with `schema_type: navigation`, create the navigation confi
 
 ---
 
+## Batch Execution (Run All)
+
+After schema creation, the user may ask to run all remaining steps at once (e.g., "run all", "do everything", "create it all"). When this happens, the agent **must execute each skill in the correct dependency order**, invoking one skill at a time sequentially.
+
+### Execution Order
+
+When running all steps, execute the applicable skills in this exact order. **Skip any step that has no matching schemas.**
+
+| Order | Skill | Condition |
+|-------|-------|-----------|
+| 1 | `create-collections` | Any schema with `schema_type: collection` |
+| 2 | `create-blueprints` | Any collection or taxonomy that needs blueprints |
+| 3 | `mount-collections` | Any collection schema with a `mount` value |
+| 4 | `create-taxonomies` | Any schema with `schema_type: taxonomy` |
+| 5 | `create-blueprints` | Any taxonomy that needs blueprints (second pass) |
+| 6 | `attach-taxonomies` | Any collection with `taxonomy_relationship` in its schema |
+| 7 | `create-entries` | If user wants sample entries (collections only) |
+| 8 | `create-terms` | If user wants sample terms (taxonomies only) |
+| 9 | `create-translations` | Multisite only — collection entry translations |
+| 10 | `create-translation-terms` | Multisite only — taxonomy term translations |
+| 11 | `create-globals` | Any schema with `schema_type: global` |
+| 12 | `create-forms` | Any schema with `schema_type: form` |
+| 13 | `create-navigations` | Any schema with `schema_type: navigation` |
+
+### Rules for Batch Execution
+
+1. **Use the right skill for each step.** Never combine responsibilities — always invoke the dedicated skill for each operation (e.g., use `create-collections` for collections, `create-taxonomies` for taxonomies, `create-entries` for entries, `create-terms` for terms).
+2. **Execute sequentially, not in parallel.** Each skill depends on the output of prior skills (e.g., blueprints need collections to exist first, mounting needs collections and blueprints).
+3. **Handle the `pages` collection dependency.** If any collection requires mounting but there is no `pages` schema, create the `pages` collection and its blueprint first before other collections.
+4. **Report progress after each skill.** Even in batch mode, briefly report what was created after each skill completes before moving to the next (e.g., "Created collections: blog_posts, pages. Moving on to blueprints...").
+5. **Stop on errors.** If a skill fails or encounters a problem, stop the batch and report the issue to the user rather than continuing with broken state.
+6. **Resolve relationships inline.** If `collection_relationship` references are found during batch execution, create the referenced collections as part of the batch (following the same order: collection → blueprint → mount).
+
+### Partial Batch
+
+The user may also request a subset of steps at once (e.g., "create collections, blueprints, and taxonomies"). In this case, execute only the requested steps, still in the correct dependency order from the table above.
+
+---
+
 ## Workflow Summary
 
 ```
@@ -202,51 +243,37 @@ User describes what they need
 [1] create-schema              --> schemas/*.md
         |
         v
-    Present next steps to user, wait for confirmation
+    Present next steps to user, offer step-by-step or "run all"
         |
-        v
-[2] create-collections         --> user confirms --> execute
-        |
-        v
-[3] create-blueprints          --> user confirms --> execute
-        |
-        v
-[4] mount-collections          --> user confirms --> execute
-        |
-        v
-[5] create-taxonomies          --> user confirms --> execute
-        |
-        v
-[6] attach-taxonomies          --> user confirms --> execute
-        |
-        v
-[7] resolve relationships      --> user confirms --> repeat Steps 2–6 for missing collections
-        |
-        v
-[8] create-entries             --> user confirms --> execute (collections only)
-        |
-        v
-[9] create-terms               --> user confirms --> execute (taxonomy terms only)
-        |
-        v
-[10] create-translations       --> user confirms --> execute (collection translations only)
-        |
-        v
-[11] create-translation-terms  --> user confirms --> execute (term translations only)
-        |
-        v
-[12] create-globals            --> user confirms --> execute
-        |
-        v
-[13] create-forms              --> user confirms --> execute
-        |
-        v
-[14] create-navigations        --> user confirms --> execute
+        +-----------+-----------+
+        |                       |
+   Step-by-step            Batch ("run all")
+        |                       |
+        v                       v
+  User picks a step       Execute all applicable
+  --> execute             skills sequentially
+  --> report & repeat     in dependency order
+        |                       |
+        v                       v
+[2]  create-collections         |
+[3]  create-blueprints          |  Same skills,
+[4]  mount-collections          |  same order,
+[5]  create-taxonomies          |  no pauses
+[6]  create-blueprints (tax)    |  between steps
+[7]  attach-taxonomies          |
+[8]  resolve relationships      |
+[9]  create-entries             |
+[10] create-terms               |
+[11] create-translations        |
+[12] create-translation-terms   |
+[13] create-globals             |
+[14] create-forms               |
+[15] create-navigations         |
 ```
 
 ## Key Rules
 
-- **Never auto-execute.** After each step, recommend the next step and wait for the user to confirm. Do not proceed automatically.
+- **Never auto-execute unless the user opts in.** In step-by-step mode, recommend the next step and wait for confirmation. In batch mode (user said "run all" or similar), execute all applicable steps sequentially without pausing between them.
 - **Each skill has strict file boundaries.** A skill only creates/edits the files it owns. It never touches files owned by another skill.
 - **Always detect multisite first.** Read `resources/sites.yaml` before creating any content. If multisite, include `sites`, `propagate`, and `localizable` fields where required.
 - **Schema files are the source of truth.** All downstream skills read from `schemas/*.md` to know what to build.
