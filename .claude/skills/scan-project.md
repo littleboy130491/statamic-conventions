@@ -55,6 +55,7 @@ For each `.yaml` file in `content/collections/`:
 2. Record: `title`, `route`, `template`, `layout`, `date`, `structure` (and `max_depth`), `mount`, `taxonomies`, `sites`, `propagate`, `revisions`, `sort_by`, `sort_dir`, `preview_targets`
 3. Determine `has_single` — true if `route` is present, false if absent
 4. Determine `has_archive` — true if `mount` is present, false if absent
+5. **Check view file existence** — For each `template` and `layout` value, check whether the corresponding view file exists in `resources/views/`. Check for both `.antlers.html` and `.blade.php` extensions. For example, `template: posts/show` means check for `resources/views/posts/show.antlers.html` or `resources/views/posts/show.blade.php`. Record the result (exists with which extension, or missing).
 
 ### Step 3: Count and List Entries
 
@@ -92,6 +93,7 @@ For each `.yaml` file in `content/taxonomies/` (only root-level config files, no
 1. Read the taxonomy config file
 2. Record: `title`, `route`, `template`, `layout`, `term_template`, `sites`, `revisions`
 3. Determine `has_single` — true if `route` is present, false if absent
+4. **Check view file existence** — For each `template`, `layout`, and `term_template` value, check whether the corresponding view file exists in `resources/views/`. Check for both `.antlers.html` and `.blade.php` extensions. For example, `term_template: categories/show` means check for `resources/views/categories/show.antlers.html` or `resources/views/categories/show.blade.php`. Record the result (exists with which extension, or missing).
 
 ### Step 6: Count and List Terms
 
@@ -225,6 +227,17 @@ Site handle: `{handle}`
 | posts | 12 | /blog/{slug} | posts/show | posts/layout | Yes | No | Yes (blog) |
 | team | 4 | -- | -- | -- | No | No | No |
 
+### View File Status
+
+| Collection | View | Path | Status |
+|------------|------|------|--------|
+| pages | template | `resources/views/pages/show.antlers.html` | Exists |
+| pages | layout | `resources/views/pages/layout.antlers.html` | Exists |
+| posts | template | `resources/views/posts/show.antlers.html` | Exists |
+| posts | layout | `resources/views/posts/layout.blade.php` | Exists |
+| team | template | -- | No template configured |
+| team | layout | -- | No layout configured |
+
 {If multisite, add entry counts per site:}
 
 ### Entry Counts by Site
@@ -239,8 +252,8 @@ Site handle: `{handle}`
 #### {handle}
 - **Title:** {title}
 - **Route:** `{route}` {or `--` if absent}
-- **Template:** `{template}` {or `--` if absent}
-- **Layout:** `{layout}` {or `--` if absent}
+- **Template:** `{template}` {or `--` if absent} — {View exists: `resources/views/{template}.antlers.html` | View exists: `resources/views/{template}.blade.php` | MISSING | --}
+- **Layout:** `{layout}` {or `--` if absent} — {View exists: `resources/views/{layout}.antlers.html` | View exists: `resources/views/{layout}.blade.php` | MISSING | --}
 - **Structure:** {Yes, max_depth: N | No}
 - **Dated:** {Yes | No}
 - **Mounted:** {Yes (mount entry title) | No}
@@ -280,14 +293,25 @@ Default-site entries have no origin (show `--`). Non-default-site entries show t
 | categories | 6 | /category/{slug} | categories/show | categories/layout | posts |
 | tags | 15 | /tag/{slug} | tags/show | tags/layout | posts |
 
+### View File Status
+
+| Taxonomy | View | Path | Status |
+|----------|------|------|--------|
+| categories | template | `resources/views/categories/show.antlers.html` | Exists |
+| categories | layout | `resources/views/categories/layout.antlers.html` | Exists |
+| categories | term_template | -- | No term_template configured |
+| tags | template | `resources/views/tags/show.antlers.html` | MISSING |
+| tags | layout | `resources/views/tags/layout.antlers.html` | Exists |
+| tags | term_template | -- | No term_template configured |
+
 ### Taxonomy Details
 
 #### {handle}
 - **Title:** {title}
 - **Route:** `{route}` {or `--` if absent}
-- **Template:** `{template}` {or `--` if absent}
-- **Layout:** `{layout}` {or `--` if absent}
-- **Term template:** `{term_template}` {or `--` if absent}
+- **Template:** `{template}` {or `--` if absent} — {View exists: `resources/views/{template}.antlers.html` | View exists: `resources/views/{template}.blade.php` | MISSING | --}
+- **Layout:** `{layout}` {or `--` if absent} — {View exists: `resources/views/{layout}.antlers.html` | View exists: `resources/views/{layout}.blade.php` | MISSING | --}
+- **Term template:** `{term_template}` {or `--` if absent} — {View exists: `resources/views/{term_template}.antlers.html` | View exists: `resources/views/{term_template}.blade.php` | MISSING | --}
 - **Attached to collections:** {comma-separated list}
 - **Blueprints:** {comma-separated list}
 - **Term count:** {N}
@@ -485,6 +509,7 @@ Use `--` for absent/empty values. Do not omit sections — if no items exist for
 10. **Use `--` for absent values.** When a field is not present in a config (e.g., no route for a `has_single: false` collection), display `--` in the table.
 11. **Handle replicator and grid sub-fields.** Blueprint fields of type `replicator` or `grid` contain nested field definitions. List these as indented sub-fields in the blueprint field details.
 12. **Do not auto-generate schemas.** Only generate reverse-engineered `schemas/*.md` files if the user explicitly requests it. If schema files already exist, warn before overwriting.
+13. **Check view file existence.** For every `template`, `layout`, and `term_template` value in collection and taxonomy configs, check whether the corresponding view file exists in the project's `resources/views/` directory. Check for both `.antlers.html` and `.blade.php` extensions. Report the actual path and extension found, or mark as `MISSING` if neither exists. If the config value is absent (`--`), skip the check.
 
 ## Accuracy Checks
 
@@ -503,4 +528,7 @@ Before finishing, verify:
 - [ ] All `mount` references are resolved to page entry titles (or marked as "Unresolved")
 - [ ] All `taxonomies` lists in collection configs are reflected in the Taxonomy-Collection Attachments
 - [ ] All fieldset imports in blueprints are cross-referenced in the Fieldset Usage section
+- [ ] Every `template`, `layout`, and `term_template` value in collection/taxonomy configs has been checked against `resources/views/` for `.antlers.html` or `.blade.php` existence
+- [ ] View File Status tables are present in both Collections and Taxonomies sections
+- [ ] Missing view files are clearly marked as `MISSING` in the report
 - [ ] No Statamic project files were created, modified, or deleted
