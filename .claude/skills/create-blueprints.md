@@ -43,7 +43,7 @@ Every blueprint MUST have a `title` and `tabs`. Use exactly these 4 tabs in this
 | Tab | Purpose | Fields |
 |-----|---------|--------|
 | `main` | Primary content | title, content/bard, excerpt, featured_image, and other content fields |
-| `sidebar` | Meta & relationships | author, categories, tags, toggles, slug, date, and other meta fields |
+| `sidebar` | Meta & relationships | author, categories, tags, toggles, slug, date, and other meta fields. **See [No Duplicate Fields](#no-duplicate-fields).** |
 | `SEO Meta` | SEO Pro addon | Hardcoded — always include exactly as shown below |
 | `SEO Previews` | SEO Pro addon | Hardcoded — always include exactly as shown below |
 
@@ -359,6 +359,14 @@ These field types must always have `localizable: true` — no exceptions:
 - SEO fields (`seo_pro`, `seo_pro_previews`)
 - `date` — if publication dates may differ per locale
 
+## No Duplicate Fields
+
+**Never define the same field handle more than once in a blueprint.** Each handle (e.g., `slug`, `title`, `date`, `author`) must appear exactly once across all tabs and sections.
+
+A common mistake is creating a `slug` field twice — once because the user's schema document lists it, and again because the sidebar tab conventionally includes it. Before adding any field, scan the entire blueprint you are building and confirm the handle does not already exist. If a field is mentioned in both the user's schema and the sidebar convention, include it **only once** in whichever tab is most appropriate (typically `sidebar` for `slug`).
+
+This rule applies to all fields, not just `slug`. Other fields prone to duplication include `title`, `date`, and `author`.
+
 ## Rules
 
 1. **Only write to** `resources/blueprints/`. No exceptions.
@@ -370,6 +378,7 @@ These field types must always have `localizable: true` — no exceptions:
 7. Always include all 4 tabs (`main`, `sidebar`, `SEO Meta`, `SEO Previews`).
 8. Copy `SEO Meta` and `SEO Previews` tabs verbatim — do not alter them.
 9. You may read other project files (config, existing blueprints, content) to inform your work, but do not modify them.
+10. **No duplicate field handles.** Every handle must appear exactly once across the entire blueprint. If a field from the user's schema overlaps with a conventional sidebar field (e.g., `slug`), include it only once. See [No Duplicate Fields](#no-duplicate-fields).
 
 ## Accuracy Checks
 
@@ -382,6 +391,7 @@ Before finishing, verify:
 - [ ] If multisite is enabled: every field has `localizable: true` unless it qualifies for a listed exception
 - [ ] Required fields use `validate: [required]`
 - [ ] Field handles use snake_case
+- [ ] No duplicate field handles across the entire blueprint (especially `slug`, `title`, `date`, `author`)
 
 ## Quick Reference
 
