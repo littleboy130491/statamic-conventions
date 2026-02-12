@@ -4,7 +4,7 @@ Scan an existing Statamic project and generate a comprehensive report of all con
 
 ## Scope
 
-**You MUST only create or edit one file: `reports/project-scan.md`.**
+**You MUST only create or edit one file: `reports/project-scan-{YYYYMMDD-HHmm}.md`** (e.g., `reports/project-scan-20250115-1430.md`).
 
 This skill is entirely read-only with respect to the Statamic project. You read all project files to gather information, then write the report.
 
@@ -24,9 +24,11 @@ Do NOT create, edit, or modify any Statamic project files — including but not 
 - Routes, controllers, or any PHP files
 - CSS, JS, or frontend assets
 
-You may **read** any project file. You write only to `reports/project-scan.md`.
+You may **read** any project file. You write only to `reports/project-scan-{YYYYMMDD-HHmm}.md`.
 
 **Optional output (user-requested only):** `schemas/*.md` — reverse-engineered schema files in `create-schema` format. Only generate schema files if the user explicitly requests it. Do not generate schemas automatically.
+
+The timestamped filename ensures each scan produces a unique file and previous reports are preserved.
 
 ## Quick Start
 
@@ -34,7 +36,7 @@ You may **read** any project file. You write only to `reports/project-scan.md`.
 2. **Scan all content types** — Collections, taxonomies, blueprints, navigations, globals, forms, fieldsets, asset containers
 3. **List entries and terms** — Title of every entry/term, per collection/taxonomy, per site (if multisite)
 4. **Map relationships** — Taxonomy attachments, mounts, entry field references, fieldset imports
-5. **Write report** — Output structured markdown to `reports/project-scan.md`
+5. **Write report** — Output structured markdown to `reports/project-scan-{YYYYMMDD-HHmm}.md`
 
 ## Workflow
 
@@ -66,6 +68,7 @@ For each collection discovered in Step 2:
 3. If single site: count all `.md` files directly in the collection directory
 4. Record total entry count and per-site breakdown
 5. **Read each entry file** and extract the `title` and `id` from the YAML frontmatter. For multisite, also record which site directory the entry belongs to and the `origin` field (the ID of the original entry this is a translation of — absent for default-site entries)
+6. **Record entry localization** — For multisite, determine which sites/languages each entry has been localized into. An entry is considered localized in a non-default site if a file with a matching `origin` exists in that site's subdirectory. Record the list of localized languages per entry.
 
 ### Step 4: Scan Blueprints
 
@@ -103,6 +106,7 @@ For each taxonomy discovered in Step 5:
 2. If multisite: list files in each `content/taxonomies/{taxonomy}/{site}/` subdirectory and count per site
 3. Record term count and per-site breakdown
 4. **Read each term file** and extract the `title` and `id`. For multisite, also record which site directory the term belongs to and the `origin` field (the ID of the original term this is a translation of — absent for default-site terms)
+5. **Record term localization** — For multisite, determine which sites/languages each term has been localized into. A term is considered localized in a non-default site if a file with a matching `origin` exists in that site's subdirectory. Record the list of localized languages per term.
 
 ### Step 7: Scan Navigations
 
@@ -161,7 +165,7 @@ Using data gathered in all previous steps, build the relationships:
 
 ### Step 13: Write Report
 
-Create the `reports/` directory if it does not exist. Write the report to `reports/project-scan.md` using the report format below.
+Create the `reports/` directory if it does not exist. Write the report to `reports/project-scan-{YYYYMMDD-HHmm}.md` using the current date and time (e.g., `reports/project-scan-20250115-1430.md`). This ensures each scan produces a unique file and does not overwrite previous reports.
 
 ### Step 14: Generate Schemas (Optional, User-Requested Only)
 
@@ -190,7 +194,7 @@ If the user requests reverse-engineered schemas:
 
 ## Report Format
 
-The report at `reports/project-scan.md` uses this structure:
+The report at `reports/project-scan-{YYYYMMDD-HHmm}.md` uses this structure:
 
 ```markdown
 # Project Scan Report
@@ -260,6 +264,7 @@ Site handle: `{handle}`
 - **Taxonomies:** {comma-separated list | --}
 - **Blueprints:** {comma-separated list}
 - **Entry count:** {N} {or "N (site1: X, site2: Y)" for multisite}
+- **Entries localization:** {comma-separated list of sites/languages that have localized entries, with count per site} {or `--` if single site}
 
 **Entries:**
 
@@ -273,14 +278,15 @@ Site handle: `{handle}`
 
 {If multisite:}
 
-| # | Title | Site | ID | Origin ID |
-|---|-------|------|----|-----------|
-| 1 | Hello World | english | {uuid} | -- |
-| 2 | Hello World | indonesian | {uuid} | {origin-uuid} |
-| 3 | About Us | english | {uuid} | -- |
-| 4 | Tentang Kami | indonesian | {uuid} | {origin-uuid} |
+| # | Title | Site | ID | Origin ID | Localized |
+|---|-------|------|----|-----------|-----------|
+| 1 | Hello World | english | {uuid} | -- | indonesian |
+| 2 | Hello World | indonesian | {uuid} | {origin-uuid} | -- |
+| 3 | About Us | english | {uuid} | -- | indonesian |
+| 4 | Tentang Kami | indonesian | {uuid} | {origin-uuid} | -- |
+| 5 | Contact | english | {uuid} | -- | (not localized) |
 
-Default-site entries have no origin (show `--`). Non-default-site entries show the ID of the original entry they are a translation of.
+Default-site entries show which other sites have a localized version in the `Localized` column. Non-default-site entries (translations) show `--` in the `Localized` column. Default-site entries with no translations in any other site show `(not localized)`.
 
 {Repeat for each collection...}
 
@@ -315,6 +321,7 @@ Default-site entries have no origin (show `--`). Non-default-site entries show t
 - **Attached to collections:** {comma-separated list}
 - **Blueprints:** {comma-separated list}
 - **Term count:** {N}
+- **Terms localization:** {comma-separated list of sites/languages that have localized terms, with count per site} {or `--` if single site}
 
 **Terms:**
 
@@ -328,14 +335,15 @@ Default-site entries have no origin (show `--`). Non-default-site entries show t
 
 {If multisite:}
 
-| # | Title | Site | ID | Origin ID |
-|---|-------|------|----|-----------|
-| 1 | News | english | {uuid} | -- |
-| 2 | Berita | indonesian | {uuid} | {origin-uuid} |
-| 3 | Technology | english | {uuid} | -- |
-| 4 | Teknologi | indonesian | {uuid} | {origin-uuid} |
+| # | Title | Site | ID | Origin ID | Localized |
+|---|-------|------|----|-----------|-----------|
+| 1 | News | english | {uuid} | -- | indonesian |
+| 2 | Berita | indonesian | {uuid} | {origin-uuid} | -- |
+| 3 | Technology | english | {uuid} | -- | indonesian |
+| 4 | Teknologi | indonesian | {uuid} | {origin-uuid} | -- |
+| 5 | Lifestyle | english | {uuid} | -- | (not localized) |
 
-Default-site terms have no origin (show `--`). Non-default-site terms show the ID of the original term they are a translation of.
+Default-site entries show which other sites have a localized version of the term in the `Localized` column. Non-default-site entries (translations) show `--` in the `Localized` column. Default-site terms with no translations in any other site show `(not localized)`.
 
 {Repeat for each taxonomy...}
 
@@ -497,7 +505,7 @@ Use `--` for absent/empty values. Do not omit sections — if no items exist for
 
 ## Rules
 
-1. **Only write to** `reports/project-scan.md`. No other files (except `schemas/*.md` if explicitly requested by the user).
+1. **Only write to** `reports/project-scan-{YYYYMMDD-HHmm}.md`. No other files (except `schemas/*.md` if explicitly requested by the user). Each scan creates a new timestamped file to avoid overwriting previous reports.
 2. **Do not modify any Statamic project files.** This skill is entirely read-only with respect to the project.
 3. **Scan everything.** Do not skip content types. If a directory is empty or does not exist, note it as "None found" in the report rather than omitting the section.
 4. **Resolve mount UUIDs.** When a collection has a `mount` field, find the entry file with that `id` in the pages collection and include the entry title in the report. If the entry is not found, report "Unresolved (ID: {uuid})".
@@ -514,7 +522,7 @@ Use `--` for absent/empty values. Do not omit sections — if no items exist for
 ## Accuracy Checks
 
 Before finishing, verify:
-- [ ] Report file is at `reports/project-scan.md`
+- [ ] Report file is at `reports/project-scan-{YYYYMMDD-HHmm}.md` with the current date and time
 - [ ] Multisite status matches `resources/sites.yaml` content
 - [ ] Every `.yaml` file in `content/collections/` has a corresponding entry in the Collections section
 - [ ] Every `.yaml` file in `content/taxonomies/` (root level) has a corresponding entry in the Taxonomies section
@@ -531,4 +539,6 @@ Before finishing, verify:
 - [ ] Every `template`, `layout`, and `term_template` value in collection/taxonomy configs has been checked against `resources/views/` for `.antlers.html` or `.blade.php` existence
 - [ ] View File Status tables are present in both Collections and Taxonomies sections
 - [ ] Missing view files are clearly marked as `MISSING` in the report
+- [ ] For multisite, each entry/term in the default site shows which other sites it has been localized into (or `(not localized)`)
+- [ ] For multisite, `Entries localization` and `Terms localization` summary fields are populated in collection/taxonomy details
 - [ ] No Statamic project files were created, modified, or deleted
