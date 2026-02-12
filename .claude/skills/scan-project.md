@@ -21,6 +21,8 @@ Do NOT create, edit, or modify any Statamic project files — including but not 
 - View/template files (`resources/views/`)
 - Config files (`config/`)
 - Schema files (`schemas/`)
+- User files (`users/`)
+- Role and group configs (`resources/roles.yaml`, `resources/user-groups.yaml`)
 - Routes, controllers, or any PHP files
 - CSS, JS, or frontend assets
 
@@ -33,7 +35,7 @@ The timestamped filename ensures each scan produces a unique file and previous r
 ## Quick Start
 
 1. **Detect multisite** — Read `resources/sites.yaml`
-2. **Scan all content types** — Collections, taxonomies, blueprints, navigations, globals, forms, fieldsets, asset containers
+2. **Scan all content types** — Collections, taxonomies, blueprints, navigations, globals, forms, fieldsets, asset containers, users and roles
 3. **List entries and terms** — Title of every entry/term, per collection/taxonomy, per site (if multisite)
 4. **Map relationships** — Taxonomy attachments, mounts, entry field references, fieldset imports
 5. **Write report** — Output structured markdown to `reports/project-scan-{YYYYMMDD-HHmm}.md`
@@ -154,7 +156,16 @@ For each `.yaml` file in `content/assets/`:
 1. Read the asset container config
 2. Record: `title`, `disk`
 
-### Step 12: Build Relationship Map
+### Step 12: Scan Users and Roles
+
+1. **Scan roles** — Read `resources/roles.yaml`. For each role, record: `handle`, `title`, and `permissions` list.
+2. **Scan user groups** — Read `resources/user-groups.yaml` if it exists. For each group, record: `handle`, `title`, and `roles` list.
+3. **Scan users** — For each `.yaml` file in `users/`:
+   - Read the user file
+   - Record: `name`, `email` (from the filename, e.g., `users/john@example.com.yaml`), `super` (boolean, true if super admin), `roles` (array of role handles), `groups` (array of group handles)
+   - Cross-reference roles and groups to determine the effective role(s) for each user
+
+### Step 13: Build Relationship Map
 
 Using data gathered in all previous steps, build the relationships:
 
@@ -163,11 +174,11 @@ Using data gathered in all previous steps, build the relationships:
 3. **Entry field references** — From blueprint fields with `type: entries` (record the `collections` list), `type: terms` (record the `taxonomies` list), `type: users`
 4. **Fieldset imports** — From blueprint `import:` directives, cross-referenced with fieldset files
 
-### Step 13: Write Report
+### Step 14: Write Report
 
 Create the `reports/` directory if it does not exist. Write the report to `reports/project-scan-{YYYYMMDD-HHmm}.md` using the current date and time (e.g., `reports/project-scan-20250115-1430.md`). This ensures each scan produces a unique file and does not overwrite previous reports.
 
-### Step 14: Generate Schemas (Optional, User-Requested Only)
+### Step 15: Generate Schemas (Optional, User-Requested Only)
 
 If the user requests reverse-engineered schemas:
 
@@ -484,7 +495,41 @@ Default-site entries show which other sites have a localized version of the term
 
 ---
 
-## 8. File Inventory
+## 8. Users and Roles
+
+### Roles
+
+| Handle | Title | Permissions |
+|--------|-------|-------------|
+| editor | Editor | edit entries, create entries, publish entries |
+| author | Author | edit own entries, create entries |
+
+{If no roles defined, show "None found."}
+
+### User Groups
+
+| Handle | Title | Roles |
+|--------|-------|-------|
+| content_team | Content Team | editor |
+
+{If no user groups defined, show "None found."}
+
+### Users
+
+| # | Name | Email | Super Admin | Roles | Groups |
+|---|------|-------|-------------|-------|--------|
+| 1 | John Doe | john@example.com | No | editor | content_team |
+| 2 | Jane Smith | jane@example.com | Yes | -- | -- |
+| 3 | Bob Writer | bob@example.com | No | author | -- |
+
+{If no users found, show "None found."}
+
+**Total users:** {N}
+**Super admins:** {N}
+
+---
+
+## 9. File Inventory
 
 | Category | Count |
 |----------|-------|
@@ -499,6 +544,9 @@ Default-site entries show which other sites have a localized version of the term
 | Form configs | {N} |
 | Fieldsets | {N} |
 | Asset containers | {N} |
+| Users | {N} |
+| Roles | {N} |
+| User groups | {N} |
 ```
 
 Use `--` for absent/empty values. Do not omit sections — if no items exist for a category, write "None found."
@@ -541,4 +589,7 @@ Before finishing, verify:
 - [ ] Missing view files are clearly marked as `MISSING` in the report
 - [ ] For multisite, each entry/term in the default site shows which other sites it has been localized into (or `(not localized)`)
 - [ ] For multisite, `Entries localization` and `Terms localization` summary fields are populated in collection/taxonomy details
+- [ ] All users in `users/` are listed with their name, email, super admin status, roles, and groups
+- [ ] All roles from `resources/roles.yaml` are listed with their permissions
+- [ ] User groups from `resources/user-groups.yaml` are listed (if file exists)
 - [ ] No Statamic project files were created, modified, or deleted
