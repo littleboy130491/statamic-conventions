@@ -1,0 +1,506 @@
+# Scan Project
+
+Scan an existing Statamic project and generate a comprehensive report of all content structures, configurations, and relationships.
+
+## Scope
+
+**You MUST only create or edit one file: `reports/project-scan.md`.**
+
+This skill is entirely read-only with respect to the Statamic project. You read all project files to gather information, then write the report.
+
+Do NOT create, edit, or modify any Statamic project files — including but not limited to:
+- Collection configs (`content/collections/`)
+- Taxonomy configs (`content/taxonomies/`)
+- Blueprint files (`resources/blueprints/`)
+- Entry/content files (`content/collections/{collection}/`)
+- Term files (`content/taxonomies/{taxonomy}/`)
+- Navigation configs or trees (`content/navigation/`, `content/trees/`)
+- Global configs or data (`content/globals/`)
+- Form configs (`resources/forms/`)
+- Fieldset files (`resources/fieldsets/`)
+- View/template files (`resources/views/`)
+- Config files (`config/`)
+- Schema files (`schemas/`)
+- Routes, controllers, or any PHP files
+- CSS, JS, or frontend assets
+
+You may **read** any project file. You write only to `reports/project-scan.md`.
+
+**Optional output (user-requested only):** `schemas/*.md` — reverse-engineered schema files in `create-schema` format. Only generate schema files if the user explicitly requests it. Do not generate schemas automatically.
+
+## Quick Start
+
+1. **Detect multisite** — Read `resources/sites.yaml`
+2. **Scan all content types** — Collections, taxonomies, blueprints, navigations, globals, forms, fieldsets, asset containers
+3. **List entries and terms** — Title of every entry/term, per collection/taxonomy, per site (if multisite)
+4. **Map relationships** — Taxonomy attachments, mounts, entry field references, fieldset imports
+5. **Write report** — Output structured markdown to `reports/project-scan.md`
+
+## Workflow
+
+### Step 1: Detect Multisite
+
+Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only**.
+
+Record:
+- Whether the project is single-site or multisite (1 site key = single, 2+ = multisite)
+- All site handles, names, locales, and URLs
+- Which site is the default (first listed)
+
+### Step 2: Scan Collections
+
+For each `.yaml` file in `content/collections/`:
+
+1. Read the collection config file
+2. Record: `title`, `route`, `template`, `layout`, `date`, `structure` (and `max_depth`), `mount`, `taxonomies`, `sites`, `propagate`, `revisions`, `sort_by`, `sort_dir`, `preview_targets`
+3. Determine `has_single` — true if `route` is present, false if absent
+4. Determine `has_archive` — true if `mount` is present, false if absent
+
+### Step 3: Count and List Entries
+
+For each collection discovered in Step 2:
+
+1. List files in `content/collections/{collection}/`
+2. If multisite: list files in each `content/collections/{collection}/{site}/` subdirectory and count per site
+3. If single site: count all `.md` files directly in the collection directory
+4. Record total entry count and per-site breakdown
+5. **Read each entry file** and extract the `title` and `id` from the YAML frontmatter. For multisite, also record which site directory the entry belongs to and the `origin` field (the ID of the original entry this is a translation of — absent for default-site entries)
+
+### Step 4: Scan Blueprints
+
+For each subdirectory and file under `resources/blueprints/`:
+
+1. **Collection blueprints** — `resources/blueprints/collections/{collection}/{handle}.yaml`
+2. **Taxonomy blueprints** — `resources/blueprints/taxonomies/{taxonomy}/{handle}.yaml`
+3. **Global blueprints** — `resources/blueprints/globals/{handle}.yaml`
+4. **Form blueprints** — `resources/blueprints/forms/{handle}.yaml`
+5. **Navigation blueprints** — `resources/blueprints/navigation/{handle}.yaml`
+6. **Asset blueprints** — `resources/blueprints/assets/{handle}.yaml`
+7. **User blueprint** — `resources/blueprints/user.yaml`
+
+For each blueprint:
+- Read the YAML file
+- Record: `title`, tab names, section names
+- For each field: record `handle`, `type`, `required` (has `validate: [required]` or `required: true`), `localizable`, and notable properties (`max_files`, `collections`, `taxonomies`, `max_items`, `buttons`, etc.)
+- Detect fieldset imports (`import: fieldset_handle`)
+- Detect relationship fields (`type: entries`, `type: terms`, `type: users`, `type: link`) and record what they reference
+
+### Step 5: Scan Taxonomies
+
+For each `.yaml` file in `content/taxonomies/` (only root-level config files, not term files in subdirectories):
+
+1. Read the taxonomy config file
+2. Record: `title`, `route`, `template`, `layout`, `term_template`, `sites`, `revisions`
+3. Determine `has_single` — true if `route` is present, false if absent
+
+### Step 6: Count and List Terms
+
+For each taxonomy discovered in Step 5:
+
+1. List `.yaml` files in `content/taxonomies/{taxonomy}/` (excluding the config file itself — the config is at `content/taxonomies/{handle}.yaml`, terms are in the `content/taxonomies/{handle}/` subdirectory)
+2. If multisite: list files in each `content/taxonomies/{taxonomy}/{site}/` subdirectory and count per site
+3. Record term count and per-site breakdown
+4. **Read each term file** and extract the `title` and `id`. For multisite, also record which site directory the term belongs to and the `origin` field (the ID of the original term this is a translation of — absent for default-site terms)
+
+### Step 7: Scan Navigations
+
+For each `.yaml` file in `content/navigation/`:
+
+1. Read the navigation config file
+2. Record: `title`, `max_depth`, `collections`, `sites`
+
+For each navigation, check for tree files:
+- Single site: `content/trees/navigation/{handle}.yaml`
+- Multisite: `content/trees/navigation/{site}/{handle}.yaml`
+
+If tree files exist, count the total number of items (including nested children) and count top-level items separately.
+
+Check for navigation blueprints at `resources/blueprints/navigation/{handle}.yaml`.
+
+### Step 8: Scan Globals
+
+For each `.yaml` file in `content/globals/` (root level only, not site subdirectories):
+
+1. Read the global config file
+2. Record: `title`, `sites`
+3. Check for data files at `content/globals/{site}/{handle}.yaml` (multisite) or inline `data:` key (single site)
+
+### Step 9: Scan Forms
+
+For each `.yaml` file in `resources/forms/`:
+
+1. Read the form config file
+2. Record: `title`, `honeypot`, `store`, `email` configurations
+
+### Step 10: Scan Fieldsets
+
+For each `.yaml` file in `resources/fieldsets/`:
+
+1. Read the fieldset file
+2. Record: `title`, field count, field handles and types
+
+Cross-reference with blueprints from Step 4 to determine which blueprints import each fieldset.
+
+### Step 11: Scan Asset Containers
+
+For each `.yaml` file in `content/assets/`:
+
+1. Read the asset container config
+2. Record: `title`, `disk`
+
+### Step 12: Build Relationship Map
+
+Using data gathered in all previous steps, build the relationships:
+
+1. **Taxonomy-Collection attachments** — From collection configs (`taxonomies` field) and taxonomy configs (`term_template` field)
+2. **Collection mounts** — From collection configs (`mount` field). Resolve the mount UUID to find the page entry title by reading the corresponding entry file in the pages collection
+3. **Entry field references** — From blueprint fields with `type: entries` (record the `collections` list), `type: terms` (record the `taxonomies` list), `type: users`
+4. **Fieldset imports** — From blueprint `import:` directives, cross-referenced with fieldset files
+
+### Step 13: Write Report
+
+Create the `reports/` directory if it does not exist. Write the report to `reports/project-scan.md` using the report format below.
+
+### Step 14: Generate Schemas (Optional, User-Requested Only)
+
+If the user requests reverse-engineered schemas:
+
+1. For each collection, generate a schema file at `schemas/{handle}.md` using the collection schema format from `create-schema`:
+   - Set `has_single: true` if the collection has a `route`, `false` otherwise
+   - Set `has_archive: true` if the collection has a `mount`, `false` otherwise
+   - Extract `route`, `dated`, `structure`, `mount` from the collection config
+   - Extract `taxonomy_relationship` from the `taxonomies` list in the collection config
+   - Extract `collection_relationship` from blueprint fields with `type: entries`
+   - Extract blueprint fields from the actual blueprint YAML, converting to pipe-delimited format
+   - If multisite, add `multisite: true` and list all sites
+
+2. For each taxonomy, generate a schema file at `schemas/{handle}.md`:
+   - Set `has_single: true` if the taxonomy has a `route`, `false` otherwise
+   - Extract `collections` from cross-referencing which collections have this taxonomy in their `taxonomies` list
+
+3. For each global, generate a schema at `schemas/{handle}.md`
+
+4. For each form, generate a schema at `schemas/{handle}.md`
+
+5. For each navigation, generate a schema at `schemas/{handle}.md`
+
+**Important:** If schema files already exist in `schemas/`, warn the user before overwriting. Ask for confirmation.
+
+## Report Format
+
+The report at `reports/project-scan.md` uses this structure:
+
+```markdown
+# Project Scan Report
+
+Generated: {YYYY-MM-DD HH:mm}
+Project: {project root directory name}
+
+---
+
+## 1. Multisite Configuration
+
+**Status:** {Single site | Multisite}
+
+{If multisite:}
+
+| Site Handle | Name | Locale | URL |
+|-------------|------|--------|-----|
+| english | English | en_US | / |
+| indonesian | Indonesian | id_ID | /id/ |
+
+Default site: `{first site handle}`
+
+{If single site:}
+
+Site handle: `{handle}`
+
+---
+
+## 2. Collections
+
+| Collection | Entries | Route | Template | Layout | Dated | Structure | Mounted |
+|------------|---------|-------|----------|--------|-------|-----------|---------|
+| pages | 5 | /{parent_uri}/{slug} | pages/show | pages/layout | No | Yes (depth: 3) | No |
+| posts | 12 | /blog/{slug} | posts/show | posts/layout | Yes | No | Yes (blog) |
+| team | 4 | -- | -- | -- | No | No | No |
+
+{If multisite, add entry counts per site:}
+
+### Entry Counts by Site
+
+| Collection | {site1} | {site2} | Total |
+|------------|---------|---------|-------|
+| pages | 5 | 5 | 10 |
+| posts | 12 | 10 | 22 |
+
+### Collection Details
+
+#### {handle}
+- **Title:** {title}
+- **Route:** `{route}` {or `--` if absent}
+- **Template:** `{template}` {or `--` if absent}
+- **Layout:** `{layout}` {or `--` if absent}
+- **Structure:** {Yes, max_depth: N | No}
+- **Dated:** {Yes | No}
+- **Mounted:** {Yes (mount entry title) | No}
+- **Taxonomies:** {comma-separated list | --}
+- **Blueprints:** {comma-separated list}
+- **Entry count:** {N} {or "N (site1: X, site2: Y)" for multisite}
+
+**Entries:**
+
+{If single site:}
+
+| # | Title | ID |
+|---|-------|----|
+| 1 | Hello World | {uuid} |
+| 2 | About Us | {uuid} |
+| 3 | Getting Started | {uuid} |
+
+{If multisite:}
+
+| # | Title | Site | ID | Origin ID |
+|---|-------|------|----|-----------|
+| 1 | Hello World | english | {uuid} | -- |
+| 2 | Hello World | indonesian | {uuid} | {origin-uuid} |
+| 3 | About Us | english | {uuid} | -- |
+| 4 | Tentang Kami | indonesian | {uuid} | {origin-uuid} |
+
+Default-site entries have no origin (show `--`). Non-default-site entries show the ID of the original entry they are a translation of.
+
+{Repeat for each collection...}
+
+---
+
+## 3. Taxonomies
+
+| Taxonomy | Terms | Route | Template | Layout | Attached To |
+|----------|-------|-------|----------|--------|-------------|
+| categories | 6 | /category/{slug} | categories/show | categories/layout | posts |
+| tags | 15 | /tag/{slug} | tags/show | tags/layout | posts |
+
+### Taxonomy Details
+
+#### {handle}
+- **Title:** {title}
+- **Route:** `{route}` {or `--` if absent}
+- **Template:** `{template}` {or `--` if absent}
+- **Layout:** `{layout}` {or `--` if absent}
+- **Term template:** `{term_template}` {or `--` if absent}
+- **Attached to collections:** {comma-separated list}
+- **Blueprints:** {comma-separated list}
+- **Term count:** {N}
+
+**Terms:**
+
+{If single site:}
+
+| # | Title | ID |
+|---|-------|----|
+| 1 | News | {uuid} |
+| 2 | Technology | {uuid} |
+| 3 | Lifestyle | {uuid} |
+
+{If multisite:}
+
+| # | Title | Site | ID | Origin ID |
+|---|-------|------|----|-----------|
+| 1 | News | english | {uuid} | -- |
+| 2 | Berita | indonesian | {uuid} | {origin-uuid} |
+| 3 | Technology | english | {uuid} | -- |
+| 4 | Teknologi | indonesian | {uuid} | {origin-uuid} |
+
+Default-site terms have no origin (show `--`). Non-default-site terms show the ID of the original term they are a translation of.
+
+{Repeat for each taxonomy...}
+
+---
+
+## 4. Blueprints
+
+### Collections
+
+| Collection | Blueprint | Fields | Fieldsets Imported |
+|------------|-----------|--------|--------------------|
+| pages | default | 2 (title, content) | -- |
+| pages | home | 6 (title, hero_heading, ...) | -- |
+| posts | post | 5 (title, featured_image, ...) | seo_fields |
+
+### Taxonomies
+
+| Taxonomy | Blueprint | Fields | Fieldsets Imported |
+|----------|-----------|--------|--------------------|
+| categories | categories | 2 (title, description) | -- |
+
+### Globals
+
+| Global | Blueprint | Fields |
+|--------|-----------|--------|
+| site_settings | site_settings | 5 (site_name, tagline, ...) |
+
+### Forms
+
+| Form | Blueprint | Fields |
+|------|-----------|--------|
+| contact | contact | 4 (name, email, subject, message) |
+
+### Blueprint Field Details
+
+#### {type}: {parent} / Blueprint: {handle}
+
+| Handle | Type | Required | Localizable | Notes |
+|--------|------|----------|-------------|-------|
+| title | text | Yes | Yes | -- |
+| content | bard | No | Yes | buttons: h2, h3, bold, italic, link |
+| featured_image | assets | No | Yes | max_files: 1 |
+| author | users | No | No | max_items: 1 |
+| categories | terms | No | No | taxonomies: categories |
+
+{For replicator fields, list sets and sub-fields indented:}
+
+| Handle | Type | Required | Localizable | Notes |
+|--------|------|----------|-------------|-------|
+| sections | replicator | No | Yes | -- |
+| &nbsp;&nbsp;set: hero | | | | |
+| &nbsp;&nbsp;&nbsp;&nbsp;heading | text | No | Yes | -- |
+| &nbsp;&nbsp;&nbsp;&nbsp;image | assets | No | Yes | max_files: 1 |
+| &nbsp;&nbsp;set: text_block | | | | |
+| &nbsp;&nbsp;&nbsp;&nbsp;content | bard | No | Yes | -- |
+
+{Repeat for each blueprint...}
+
+---
+
+## 5. Navigations
+
+| Navigation | Max Depth | Collections | Items |
+|------------|-----------|-------------|-------|
+| header | 2 | pages | 5 (3 top-level) |
+| footer | 1 | pages | 3 (3 top-level) |
+
+### Navigation Details
+
+#### {handle}
+- **Title:** {title}
+- **Max depth:** {N}
+- **Collections:** {comma-separated list}
+- **Sites:** {comma-separated list | all}
+- **Tree items:** {N total (M top-level)}
+- **Has blueprint:** {Yes | No}
+
+{Repeat for each navigation...}
+
+---
+
+## 6. Other Content Types
+
+### Globals
+
+| Handle | Title | Sites |
+|--------|-------|-------|
+| site_settings | Site Settings | english, indonesian |
+| social | Social Links | english, indonesian |
+
+### Forms
+
+| Handle | Title | Store | Honeypot |
+|--------|-------|-------|----------|
+| contact | Contact Form | Yes | website |
+
+### Asset Containers
+
+| Handle | Title | Disk |
+|--------|-------|------|
+| assets | Assets | assets |
+
+### Fieldsets
+
+| Handle | Title | Fields | Used In |
+|--------|-------|--------|---------|
+| seo_fields | SEO Fields | 3 (meta_title, meta_description, og_image) | posts/post, pages/default |
+
+---
+
+## 7. Relationships Map
+
+### Taxonomy-Collection Attachments
+
+| Taxonomy | Attached To Collections |
+|----------|-------------------------|
+| categories | posts |
+| tags | posts |
+
+### Collection Mounts
+
+| Collection | Mount Page | Mount Entry ID |
+|------------|------------|----------------|
+| posts | Blog (pages) | {uuid} |
+
+### Entry Field References (Cross-Collection)
+
+| Blueprint | Field | Type | References |
+|-----------|-------|------|------------|
+| posts/post | author | users | Users |
+| pages/home | featured_posts | entries | posts |
+
+### Fieldset Usage
+
+| Fieldset | Imported In |
+|----------|-------------|
+| seo_fields | posts/post, pages/default |
+
+---
+
+## 8. File Inventory
+
+| Category | Count |
+|----------|-------|
+| Collection configs | {N} |
+| Taxonomy configs | {N} |
+| Blueprints (total) | {N} |
+| Entries (total) | {N} |
+| Terms (total) | {N} |
+| Navigation configs | {N} |
+| Navigation trees | {N} |
+| Global configs | {N} |
+| Form configs | {N} |
+| Fieldsets | {N} |
+| Asset containers | {N} |
+```
+
+Use `--` for absent/empty values. Do not omit sections — if no items exist for a category, write "None found."
+
+## Rules
+
+1. **Only write to** `reports/project-scan.md`. No other files (except `schemas/*.md` if explicitly requested by the user).
+2. **Do not modify any Statamic project files.** This skill is entirely read-only with respect to the project.
+3. **Scan everything.** Do not skip content types. If a directory is empty or does not exist, note it as "None found" in the report rather than omitting the section.
+4. **Resolve mount UUIDs.** When a collection has a `mount` field, find the entry file with that `id` in the pages collection and include the entry title in the report. If the entry is not found, report "Unresolved (ID: {uuid})".
+5. **Count and list accurately.** Entry counts must reflect actual `.md` files. Term counts must reflect actual `.yaml` files (excluding config files). For multisite, provide per-site breakdowns. Every entry and term must be listed by title under its collection/taxonomy detail block.
+6. **Detect fieldset imports.** When a blueprint has `import: {handle}`, record this in both the blueprint details and the fieldset usage section.
+7. **Distinguish config from data files.** For taxonomies, `content/taxonomies/{handle}.yaml` is the config; files inside `content/taxonomies/{handle}/` are terms. For globals, `content/globals/{handle}.yaml` is the config; files inside `content/globals/{site}/` are data.
+8. **Handle missing directories gracefully.** If `content/navigation/` does not exist, report "None found" for navigations. Do not error.
+9. **Report raw values.** Do not interpret or modify config values. Report `route`, `template`, `layout` exactly as they appear in the YAML files.
+10. **Use `--` for absent values.** When a field is not present in a config (e.g., no route for a `has_single: false` collection), display `--` in the table.
+11. **Handle replicator and grid sub-fields.** Blueprint fields of type `replicator` or `grid` contain nested field definitions. List these as indented sub-fields in the blueprint field details.
+12. **Do not auto-generate schemas.** Only generate reverse-engineered `schemas/*.md` files if the user explicitly requests it. If schema files already exist, warn before overwriting.
+
+## Accuracy Checks
+
+Before finishing, verify:
+- [ ] Report file is at `reports/project-scan.md`
+- [ ] Multisite status matches `resources/sites.yaml` content
+- [ ] Every `.yaml` file in `content/collections/` has a corresponding entry in the Collections section
+- [ ] Every `.yaml` file in `content/taxonomies/` (root level) has a corresponding entry in the Taxonomies section
+- [ ] Entry counts match actual file counts in collection directories
+- [ ] Every entry is listed by title under its collection detail block
+- [ ] Term counts match actual `.yaml` file counts in taxonomy subdirectories (excluding config files)
+- [ ] Every term is listed by title under its taxonomy detail block
+- [ ] For multisite, each entry/term listing includes the site it belongs to
+- [ ] Every blueprint file under `resources/blueprints/` is accounted for
+- [ ] All relationship fields (`entries`, `terms`, `users`, `link`) are captured in the Relationships Map
+- [ ] All `mount` references are resolved to page entry titles (or marked as "Unresolved")
+- [ ] All `taxonomies` lists in collection configs are reflected in the Taxonomy-Collection Attachments
+- [ ] All fieldset imports in blueprints are cross-referenced in the Fieldset Usage section
+- [ ] No Statamic project files were created, modified, or deleted

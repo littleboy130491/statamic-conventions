@@ -13,6 +13,30 @@ Before executing any skill, the agent must locate the skills folder containing t
 
 When invoking a skill, always use the Skill tool with the skill name (e.g., `create-schema`). The Skill tool will handle locating and executing the skill from the correct folder.
 
+## Scanning an Existing Project
+
+Before creating new content structures, the agent can scan an existing Statamic project to understand what already exists. This is useful for:
+
+- **Documentation** — Generate a complete inventory of an existing project
+- **Migration planning** — Understand a project before rebuilding or extending it
+- **Onboarding** — Help new developers understand a project's structure
+- **Schema generation** — Reverse-engineer schema files from an existing project
+
+### Scan Workflow
+
+**Skill:** `scan-project`
+**Output:** `reports/project-scan.md` (and optionally `schemas/*.md`)
+
+1. Run `scan-project` to analyze the existing project
+2. Review the generated report at `reports/project-scan.md`
+3. (Optional) Request reverse-engineered schema files for the `schemas/` directory
+
+The scan is entirely read-only — it does not modify any project files. The generated report covers collections, taxonomies, blueprints, navigations, globals, forms, fieldsets, asset containers, multisite configuration, entry/term counts, and all relationships.
+
+If reverse-engineered schemas are generated, they can be used as input for the standard creation workflow (Step 1 onwards), enabling a "scan then rebuild" migration pattern.
+
+---
+
 ## How It Works
 
 The user describes what they want to build in plain language:
@@ -212,6 +236,7 @@ When running all steps, execute the applicable skills in this exact order. **Ski
 
 | Order | Skill | Condition |
 |-------|-------|-----------|
+| 0 (optional) | `scan-project` | User wants to scan existing project before building |
 | 1 | `create-collections` | Any schema with `schema_type: collection` |
 | 2 | `create-blueprints` | Any collection or taxonomy that needs blueprints |
 | 3 | `mount-collections` | Any collection schema with a `mount` value AND `has_archive` is not `false` |
@@ -287,3 +312,4 @@ User describes what they need
 - **Surface dependencies early.** If a step requires something that doesn't exist yet (e.g., mounting needs a pages collection), inform the user and recommend the prerequisite step first.
 - **Respect `has_single` and `has_archive` from schemas.** Collections with `has_single: false` have no routes, templates, or layouts. Collections with `has_archive: false` are never mounted. Taxonomies with `has_single: false` have no routes or term templates.
 - **Mount collections only when `has_archive` allows it.** If a collection schema has a `mount` value and `has_archive` is not `false`, it must be mounted on a page in the pages collection. Skip mounting for collections with `has_archive: false`.
+- **Scan before build (optional).** If the user has an existing project, recommend running `scan-project` first to understand what already exists. The scan report can inform schema creation and prevent accidental duplication.
