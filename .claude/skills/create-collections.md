@@ -34,7 +34,16 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 - Single site: One site key defined
 - Multisite: Multiple site keys (e.g., `english`, `indonesian`)
 
-### Step 2: Create Collection Config
+### Step 2: Read Schema (if available)
+
+If a schema file exists at `schemas/{handle}.md`, read it to determine `has_single` and `has_archive` values. These control which fields to include:
+
+- **`has_single: false`** → Omit `route`, `template`, `layout`, and `preview_targets`. Entries have no public pages.
+- **`has_archive: false`** → Do NOT mount. Do not suggest mounting to the user.
+
+If no schema file exists, default both to `true`.
+
+### Step 3: Create Collection Config
 
 **Path:** `content/collections/{handle}.yaml` — this is the only file you create in this step.
 
@@ -44,16 +53,21 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 |-------|-------|
 | `title` | Collection display name in plural form (e.g., "Blog Posts") |
 | `icon` | `collections` |
-| `template` | `{handle}/show` — replace `{handle}` with the collection handle |
-| `layout` | `{handle}/layout` — replace `{handle}` with the collection handle |
 | `revisions` | `true` |
-| `route` | `/{handle}/{slug}` — replace `{handle}` with the collection handle |
 | `date` | `true` |
 | `sort_by` | `date` |
 | `sort_dir` | `desc` |
 | `date_behavior` | See hardcoded block below |
-| `preview_targets` | See hardcoded block below |
 | `structure` | See hardcoded block below. Set `max_depth` based on collection type |
+
+**Add only if `has_single: true` (or not specified):**
+
+| Field | Value |
+|-------|-------|
+| `template` | `{handle}/show` — replace `{handle}` with the collection handle |
+| `layout` | `{handle}/layout` — replace `{handle}` with the collection handle |
+| `route` | `/{handle}/{slug}` — replace `{handle}` with the collection handle |
+| `preview_targets` | See hardcoded block below |
 
 ```yaml
 date_behavior:
@@ -74,7 +88,7 @@ structure:
 - `1` — Flat collections (e.g., blog posts, news). Enables drag-and-drop ordering without nesting
 - `3` or more — Hierarchical collections (e.g., pages). Enables nested parent-child structure
 
-**Add if multisite** (multiple sites detected in Step 1):
+**Add if multisite** (multiple sites detected in Step 1 — regardless of `has_single`):
 
 | Field | Value |
 |-------|-------|
@@ -92,20 +106,24 @@ Before adding a taxonomy handle to the list, check if that taxonomy already exis
 1. **Only write to** `content/collections/{handle}.yaml`. No other files.
 2. **Do not create blueprints** — use `create-blueprints` skill instead.
 3. **Do not create entries** — use `create-entries` skill instead.
-4. **Do not mount collections** — use `mount-collections` skill instead.
+4. **Do not mount collections** — use `mount-collections` skill instead. If `has_archive: false` in the schema, do NOT suggest mounting.
 5. **Do not create taxonomy files** — use `create-taxonomies` skill instead. To attach taxonomies to existing collections, use `attach-taxonomies` skill. If a taxonomy in the `taxonomies` list does not exist yet, ask the user before proceeding.
 6. **Do not create or edit templates, config, routes, PHP, or frontend files.**
 7. You may read any project file to inform your work, but do not modify files outside the allowed path.
 8. Output valid YAML only.
 9. Always detect multisite in Step 1 before writing the collection config. If multisite is enabled, you MUST include `sites` and `propagate` fields.
-10. Always include all required fields from the table in Step 2.
+10. Always include all required fields from the "Always include" table in Step 3.
+11. **If `has_single: false`** — do NOT include `route`, `template`, `layout`, or `preview_targets`.
+12. **If `has_archive: false`** — do NOT mount. Do not suggest or ask about mounting.
 
 ## Accuracy Checks
 
 Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path is `content/collections/{handle}.yaml`
-- [ ] All required fields from the Step 2 table are present
-- [ ] `date_behavior`, `preview_targets`, and `structure` blocks are included exactly as specified
+- [ ] All required fields from the Step 3 "Always include" table are present
+- [ ] If `has_single: true` (or not specified): `route`, `template`, `layout`, and `preview_targets` are present
+- [ ] If `has_single: false`: `route`, `template`, `layout`, and `preview_targets` are NOT present
+- [ ] `date_behavior` and `structure` blocks are included exactly as specified
 - [ ] If multisite is enabled: `sites` lists all site keys and `propagate: true` is set
 - [ ] No blueprints, entries, templates, config, or other out-of-scope files were created or edited

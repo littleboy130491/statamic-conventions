@@ -63,7 +63,10 @@ Wait for the user to tell you which step to execute, or whether they want to run
 **Skill:** `create-collections`
 **Output:** `content/collections/{handle}.yaml`
 
-For each schema file with `schema_type: collection`, create the collection config.
+For each schema file with `schema_type: collection`, create the collection config. The skill reads the schema to check `has_single` and `has_archive`:
+
+- **`has_single: false`** → Collection config will omit `route`, `template`, `layout`, and `preview_targets`
+- **`has_archive: false`** → Collection will not be mounted (skip Step 4 for this collection)
 
 Do not add `mount` or `taxonomies` fields yet — those are handled by dedicated skills in later steps.
 
@@ -82,7 +85,9 @@ For each collection created in Step 2, create its blueprint(s) based on the fiel
 
 **Skill:** `mount-collections` (creates the page entry + adds `mount` to collection config)
 
-For each collection that has a `mount` value in its schema:
+**Skip this step for collections with `has_archive: false` in their schema.** Only mount collections that have `has_archive: true` (or unspecified) and a `mount` value in their schema.
+
+For each eligible collection:
 
 1. Create a page entry in the pages collection (uses `create-entries` rules internally)
 2. Add the `mount` field to the collection config, referencing the page entry's UUID
@@ -96,7 +101,9 @@ If the `pages` collection does not exist yet, inform the user and recommend crea
 **Skill:** `create-taxonomies`
 **Output:** `content/taxonomies/{handle}.yaml`
 
-For each schema file with `schema_type: taxonomy`, create the taxonomy config.
+For each schema file with `schema_type: taxonomy`, create the taxonomy config. The skill reads the schema to check `has_single`:
+
+- **`has_single: false`** → Taxonomy config will omit `route`, `template`, `layout`, and `preview_targets`. Terms are data-only with no public pages.
 
 Also recommend creating taxonomy blueprints using `create-blueprints`.
 
@@ -207,7 +214,7 @@ When running all steps, execute the applicable skills in this exact order. **Ski
 |-------|-------|-----------|
 | 1 | `create-collections` | Any schema with `schema_type: collection` |
 | 2 | `create-blueprints` | Any collection or taxonomy that needs blueprints |
-| 3 | `mount-collections` | Any collection schema with a `mount` value |
+| 3 | `mount-collections` | Any collection schema with a `mount` value AND `has_archive` is not `false` |
 | 4 | `create-taxonomies` | Any schema with `schema_type: taxonomy` |
 | 5 | `create-blueprints` | Any taxonomy that needs blueprints (second pass) |
 | 6 | `attach-taxonomies` | Any collection with `taxonomy_relationship` in its schema |
@@ -278,4 +285,5 @@ User describes what they need
 - **Always detect multisite first.** Read `resources/sites.yaml` before creating any content. If multisite, include `sites`, `propagate`, and `localizable` fields where required.
 - **Schema files are the source of truth.** All downstream skills read from `schemas/*.md` to know what to build.
 - **Surface dependencies early.** If a step requires something that doesn't exist yet (e.g., mounting needs a pages collection), inform the user and recommend the prerequisite step first.
-- **Mount every non-pages collection.** If a collection schema has a `mount` value, it must be mounted on a page in the pages collection.
+- **Respect `has_single` and `has_archive` from schemas.** Collections with `has_single: false` have no routes, templates, or layouts. Collections with `has_archive: false` are never mounted. Taxonomies with `has_single: false` have no routes or term templates.
+- **Mount collections only when `has_archive` allows it.** If a collection schema has a `mount` value and `has_archive` is not `false`, it must be mounted on a page in the pages collection. Skip mounting for collections with `has_archive: false`.

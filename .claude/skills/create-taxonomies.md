@@ -34,7 +34,15 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 - Single site: One site key defined
 - Multisite: Multiple site keys (e.g., `english`, `indonesian`)
 
-### Step 2: Create Taxonomy Config
+### Step 2: Read Schema (if available)
+
+If a schema file exists at `schemas/{handle}.md`, read it to determine the `has_single` value. This controls which fields to include:
+
+- **`has_single: false`** → Omit `route`, `template`, `layout`, and `preview_targets`. Terms have no public pages.
+
+If no schema file exists, default to `has_single: true`.
+
+### Step 3: Create Taxonomy Config
 
 **Path:** `content/taxonomies/{handle}.yaml` — this is the only file you create in this step.
 
@@ -43,9 +51,14 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 | Field | Value |
 |-------|-------|
 | `title` | Taxonomy display name in plural form (e.g., "Categories", "Tags") |
+| `revisions` | `true` |
+
+**Add only if `has_single: true` (or not specified):**
+
+| Field | Value |
+|-------|-------|
 | `template` | `{handle}/show` — replace `{handle}` with the taxonomy handle |
 | `layout` | `{handle}/layout` — replace `{handle}` with the taxonomy handle |
-| `revisions` | `true` |
 | `route` | `/{handle}/{slug}` — replace `{handle}` with the taxonomy handle |
 | `preview_targets` | See hardcoded block below |
 
@@ -57,7 +70,7 @@ preview_targets:
     refresh: true
 ```
 
-**Add if multisite** (multiple sites detected in Step 1):
+**Add if multisite** (multiple sites detected in Step 1 — regardless of `has_single`):
 
 | Field | Value |
 |-------|-------|
@@ -73,14 +86,16 @@ preview_targets:
 6. You may read any project file to inform your work, but do not modify files outside the allowed path.
 7. Output valid YAML only.
 8. Always detect multisite in Step 1 before writing the taxonomy config. If multisite is enabled, you MUST include the `sites` field.
-9. Always include all required fields from the table in Step 2.
+9. Always include all required fields from the "Always include" table in Step 3.
+10. **If `has_single: false`** — do NOT include `route`, `template`, `layout`, or `preview_targets`.
 
 ## Accuracy Checks
 
 Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path is `content/taxonomies/{handle}.yaml`
-- [ ] All required fields from the Step 2 table are present
-- [ ] `preview_targets` block is included exactly as specified
+- [ ] All required fields from the Step 3 "Always include" table are present
+- [ ] If `has_single: true` (or not specified): `route`, `template`, `layout`, and `preview_targets` are present
+- [ ] If `has_single: false`: `route`, `template`, `layout`, and `preview_targets` are NOT present
 - [ ] If multisite is enabled: `sites` lists all site keys
 - [ ] No collection configs, blueprints, entries, templates, or other out-of-scope files were created or edited

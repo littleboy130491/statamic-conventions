@@ -52,11 +52,13 @@ Each file uses a simple flat format: key-value header followed by a pipe-delimit
 schema_name: {handle}
 schema_type: collection
 title: {Display Title}
-route: /{handle}/{slug}
+has_single: {true/false}
+has_archive: {true/false}
+route: /{handle}/{slug} (omit if has_single: false)
 dated: {true/false}
 structure: {true/false}
 structure_max_depth: {number, only if structure: true}
-mount: {page slug, or omit if none}
+mount: {page slug, omit if has_archive: false or none}
 taxonomy_relationship: {- handle1 - handle2, or omit if none}
 collection_relationship: {- handle1 - handle2, or omit if none}
 multisite: {true/false}
@@ -68,12 +70,21 @@ fields:
 {handle} | {type} | {required/optional} | {localizable, only if multisite} | {notes}
 ```
 
+**`has_single` / `has_archive` explained (similar to WordPress):**
+
+- **`has_single: true`** — Each entry has its own page with a URL (like WordPress posts/pages). The collection MUST have a `route`. Downstream skills will generate templates and layouts for individual entries.
+- **`has_single: false`** — Entries have no individual pages (like WordPress data-only post types, e.g., team members displayed only within other pages). Omit `route`. Downstream skills will NOT create templates or layouts for this collection.
+- **`has_archive: true`** — The collection has a listing/index page (like WordPress archive pages). The collection can have a `mount` to a page that serves as the archive.
+- **`has_archive: false`** — No listing page exists for this collection. Omit `mount`.
+
 **Example:**
 
 ```
 schema_name: blog_posts
 schema_type: collection
 title: Blog Posts
+has_single: true
+has_archive: true
 route: /blog/{slug}
 dated: true
 structure: false
@@ -99,6 +110,8 @@ If a collection has **multiple blueprints**, list them sequentially separated by
 schema_name: pages
 schema_type: collection
 title: Pages
+has_single: true
+has_archive: false
 route: /{parent_uri}/{slug}
 dated: false
 structure: true
@@ -133,7 +146,8 @@ featured_posts | entries | optional | | collections: blog_posts, max_items: 3
 schema_name: {handle}
 schema_type: taxonomy
 title: {Display Title}
-route: /{handle}/{slug}
+has_single: {true/false}
+route: /{handle}/{slug} (omit if has_single: false)
 collections: - {collection1} - {collection2}
 multisite: {true/false}
 sites: {- site1 - site2, only if multisite: true}
@@ -144,12 +158,18 @@ title | text | required | localizable
 {additional fields if any}
 ```
 
+**`has_single` for taxonomies:**
+
+- **`has_single: true`** — Each term has its own page listing entries with that term (e.g., `/categories/news/`). The taxonomy MUST have a `route`. Downstream skills will create term templates.
+- **`has_single: false`** — Terms are data-only, used for organizing/filtering in the control panel but have no public pages. Omit `route`. Downstream skills will NOT create term templates.
+
 **Example:**
 
 ```
 schema_name: categories
 schema_type: taxonomy
 title: Categories
+has_single: true
 route: /categories/{slug}
 collections: - blog_posts - projects
 multisite: true
@@ -290,14 +310,23 @@ team_members | grid | optional | localizable
 5. **Use the exact format** shown above — key-value header, pipe-delimited fields.
 6. **Omit keys that don't apply** — e.g., don't include `mount:` if there's no mount, don't include `localizable` column if single site, don't include `collection_relationship` if no entries fields reference other collections.
 7. **If a collection has `entries` fields referencing other collections**, list those collection handles in `collection_relationship`. This signals downstream skills to create those collections if they don't already exist.
-8. **If requirements are unclear**, ask the user before writing. Do not guess.
-9. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
+8. **Every collection MUST have `has_single` and `has_archive`. Every taxonomy MUST have `has_single`.**
+   - Collection `has_single: false` → omit `route`. Downstream skills will NOT create templates or layouts for this collection.
+   - Collection `has_archive: false` → omit `mount`. Do NOT ask the user whether they want to mount the collection.
+   - Taxonomy `has_single: false` → omit `route`. Downstream skills will NOT create term templates.
+9. **If requirements are unclear**, ask the user before writing. Do not guess.
+10. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
 
 ## Accuracy Checks
 
 Before finishing, verify:
 - [ ] All schema files are in `schemas/`
 - [ ] Each file has `schema_name` and `schema_type`
+- [ ] Each collection schema has `has_single` and `has_archive`
+- [ ] Each taxonomy schema has `has_single`
+- [ ] Collections with `has_single: false` do NOT have `route`
+- [ ] Taxonomies with `has_single: false` do NOT have `route`
+- [ ] Collections with `has_archive: false` do NOT have `mount`
 - [ ] Each collection schema has at least one blueprint with fields
 - [ ] Multisite schemas have `localizable` on appropriate fields
 - [ ] Collections with `entries` fields referencing other collections have matching `collection_relationship` list

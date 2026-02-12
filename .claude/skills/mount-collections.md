@@ -24,15 +24,20 @@ If the task requires changes outside the allowed paths, stop and inform the user
 
 ## Quick Start
 
-1. Identify the collection to mount and the pages collection structure
-2. Create a page entry for the mount point
-3. Add the `mount` field to the collection config
+1. **Check schema** — Read `schemas/{handle}.md` to verify `has_archive` is not `false`
+2. Identify the collection to mount and the pages collection structure
+3. Create a page entry for the mount point
+4. Add the `mount` field to the collection config
 
 ## Workflow
 
-### Step 1: Read Project Context
+### Step 1: Check Schema & Read Project Context
 
-Read the following files — **read only, do not modify**:
+**First**, if a schema file exists at `schemas/{handle}.md`, read it and check the `has_archive` value:
+- **`has_archive: false`** → **STOP. Do NOT mount this collection.** Inform the user that this collection has `has_archive: false` and does not support mounting.
+- **`has_archive: true`** (or not specified) → Proceed.
+
+**Then**, read the following files — **read only, do not modify**:
 - `resources/sites.yaml` — to detect multisite and identify site keys
 - `content/collections/pages.yaml` — to understand the pages collection structure
 - `content/collections/{handle}.yaml` — the collection config you will add `mount` to
@@ -74,18 +79,20 @@ Replace `{page-entry-id}` with the `id` value from the page entry created in Ste
 
 ## Rules
 
-1. **Only create** one page entry file and **only edit** one collection config file. No other files.
-2. **Only add the `mount` field** to the collection config. Do not change any other fields in that file.
-3. **Do not create blueprints** — use `create-blueprints` skill instead.
-4. **Do not create other entries** — use `create-entries` skill instead.
-5. **Do not create or edit templates, config, routes, PHP, or frontend files.**
-6. You may read any project file to inform your work, but do not modify files outside the allowed paths.
-7. The page entry must follow the rules in `create-entries.md` for frontmatter, ID generation, and file naming.
-8. If multisite is enabled, place the page entry under the default site directory.
+1. **Check `has_archive` first.** If the schema has `has_archive: false`, do NOT mount. Stop and inform the user.
+2. **Only create** one page entry file and **only edit** one collection config file. No other files.
+3. **Only add the `mount` field** to the collection config. Do not change any other fields in that file.
+4. **Do not create blueprints** — use `create-blueprints` skill instead.
+5. **Do not create other entries** — use `create-entries` skill instead.
+6. **Do not create or edit templates, config, routes, PHP, or frontend files.**
+7. You may read any project file to inform your work, but do not modify files outside the allowed paths.
+8. The page entry must follow the rules in `create-entries.md` for frontmatter, ID generation, and file naming.
+9. If multisite is enabled, place the page entry under the default site directory.
 
 ## Accuracy Checks
 
 Before finishing, verify:
+- [ ] Schema does NOT have `has_archive: false` (if it does, this skill should not have run)
 - [ ] Only one page entry file was created
 - [ ] Page entry has a valid `id`, `title`, and `template` in frontmatter
 - [ ] `template` follows the `{collection-handle}/index` pattern
