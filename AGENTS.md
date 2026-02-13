@@ -1,315 +1,99 @@
-# Statamic Content Builder — Agent Workflow
-
-This document describes the end-to-end workflow for building Statamic content structures from a user's description.
-
-## Finding Skills
-
-Before executing any skill, the agent must locate the skills folder containing the skill files needed for each operation.
-
-**Skill folder discovery logic:**
-1. First, check if a `skills` folder exists in the **root project directory** (the current working directory)
-2. If not found, check if a `skills` folder exists in the **`.claude` directory** (`~/.claude/skills` or `.claude/skills` relative to the project)
-3. Use whichever location is found; if neither exists, inform the user that skills are not installed
-
-When invoking a skill, always use the Skill tool with the skill name (e.g., `create-schema`). The Skill tool will handle locating and executing the skill from the correct folder.
-
-## Scanning an Existing Project
-
-Before creating new content structures, the agent can scan an existing Statamic project to understand what already exists. This is useful for:
-
-- **Documentation** — Generate a complete inventory of an existing project
-- **Migration planning** — Understand a project before rebuilding or extending it
-- **Onboarding** — Help new developers understand a project's structure
-- **Schema generation** — Reverse-engineer schema files from an existing project
-
-### Scan Workflow
-
-**Skill:** `scan-project`
-**Output:** `reports/project-scan.md` (and optionally `schemas/*.md`)
-
-1. Run `scan-project` to analyze the existing project
-2. Review the generated report at `reports/project-scan.md`
-3. (Optional) Request reverse-engineered schema files for the `schemas/` directory
-
-The scan is entirely read-only — it does not modify any project files. The generated report covers collections, taxonomies, blueprints, navigations, globals, forms, fieldsets, asset containers, multisite configuration, entry/term counts, and all relationships.
-
-If reverse-engineered schemas are generated, they can be used as input for the standard creation workflow (Step 1 onwards), enabling a "scan then rebuild" migration pattern.
-
----
-
-## How It Works
-
-The user describes what they want to build in plain language:
-
-> "Create posts, like WordPress"
-> "I need a portfolio site with projects, services, and a team section"
-> "Build a blog with categories and tags"
-
-The agent generates schema files, then **guides the user through each downstream skill**. The user can choose to execute steps one at a time or run multiple (or all) steps at once in batch mode.
-
----
-
-## Workflow
-
-### Step 1: Generate Schema
-
-**Skill:** `create-schema`
-**Output:** `schemas/*.md`
-
-Ask the user what their site needs (or infer from their description). Generate one `.md` schema file per content type in the `schemas/` directory. Each schema file maps to a downstream skill.
-
-Do not create any Statamic files in this step — only schema `.md` files.
-
-**After completing this step**, read all generated schema files and present the user with a summary of what was created and the recommended next steps in order. For example:
-
-> Schema files created:
-> - `schemas/blog_posts.md` (collection)
-> - `schemas/categories.md` (taxonomy)
-> - `schemas/site_settings.md` (global)
->
-> Recommended next steps:
-> 1. Create collections — `blog_posts`
-> 2. Create blueprints — `post` for blog_posts
-> 3. Mount collections — mount `blog_posts` on a `blog` page
-> 4. Create taxonomies — `categories`
-> 5. Attach taxonomies — attach `categories` to `blog_posts`
-> 6. Create entries — sample entries for blog_posts
-> 7. Create globals — `site_settings`
->
-> You can run these one at a time, or say **"run all"** to execute all steps automatically.
->
-> Which step would you like to run next?
-
-Wait for the user to tell you which step to execute, or whether they want to run all (or a subset) at once.
-
-### Step 2: Create Collections
-
-**Skill:** `create-collections`
-**Output:** `content/collections/{handle}.yaml`
-
-For each schema file with `schema_type: collection`, create the collection config. The skill reads the schema to check `has_single` and `has_archive`:
-
-- **`has_single: false`** → Collection config will omit `route`, `template`, `layout`, and `preview_targets`
-- **`has_archive: false`** → Collection will not be mounted (skip Step 4 for this collection)
-
-Do not add `mount` or `taxonomies` fields yet — those are handled by dedicated skills in later steps.
-
-**After completing**, report what was created and recommend the next step.
-
-### Step 3: Create Blueprints
-
-**Skill:** `create-blueprints`
-**Output:** `resources/blueprints/collections/{collection}/{handle}.yaml`
-
-For each collection created in Step 2, create its blueprint(s) based on the fields defined in the schema.
-
-**After completing**, report what was created and recommend the next step.
-
-### Step 4: Mount Collections on Pages
-
-**Skill:** `mount-collections` (creates the page entry + adds `mount` to collection config)
-
-**Skip this step for collections with `has_archive: false` in their schema.** Only mount collections that have `has_archive: true` (or unspecified) and a `mount` value in their schema.
-
-For each eligible collection:
-
-1. Create a page entry in the pages collection (uses `create-entries` rules internally)
-2. Add the `mount` field to the collection config, referencing the page entry's UUID
-
-If the `pages` collection does not exist yet, inform the user and recommend creating it first (Step 2 and Step 3 for pages).
-
-**After completing**, report what was created and recommend the next step.
-
-### Step 5: Create Taxonomies
-
-**Skill:** `create-taxonomies`
-**Output:** `content/taxonomies/{handle}.yaml`
-
-For each schema file with `schema_type: taxonomy`, create the taxonomy config. The skill reads the schema to check `has_single`:
-
-- **`has_single: false`** → Taxonomy config will omit `route`, `template`, `layout`, and `preview_targets`. Terms are data-only with no public pages.
-
-Also recommend creating taxonomy blueprints using `create-blueprints`.
-
-**After completing**, report what was created and recommend the next step.
-
-### Step 6: Attach Taxonomies
-
-**Skill:** `attach-taxonomies`
-
-For each collection that has `taxonomy_relationship` in its schema, attach the taxonomies:
-
-1. Add taxonomy handles to the collection's `taxonomies` list
-2. Add `term_template` to the taxonomy config
-
-**After completing**, report what was changed and recommend the next step.
-
-### Step 7: Resolve Collection Relationships
-
-Check all schemas for `collection_relationship` entries that reference collections not yet created.
-
-For each missing collection, inform the user and recommend the steps needed:
-
-> The `blog_posts` collection references `team_members` via `collection_relationship`, but `team_members` does not exist yet.
->
-> Recommended steps to resolve:
-> 1. Create collection — `team_members`
-> 2. Create blueprint — for `team_members`
-> 3. Mount collection — mount `team_members` if it has a mount page
->
-> Which step would you like to run?
-
-Wait for the user to confirm before creating anything.
-
-### Step 8: Create Entries (Optional)
-
-**Skill:** `create-entries`
-**Output:** `content/collections/{collection}/{site}/{slug}.md`
-
-Create example/dummy entries for **collections only**. Do NOT create taxonomy terms — use `create-terms` for those.
-
-For multisite projects, create entries for the default site only. Recommend `create-translations` for non-default sites.
-
-### Step 9: Create Terms (Optional)
-
-**Skill:** `create-terms`
-**Output:** `content/taxonomies/{taxonomy}/{slug}.yaml`
-
-Create example/dummy term files for **taxonomies only**. Do NOT create collection entries — use `create-entries` for those.
-
-For multisite projects, term files do not use site subdirectories. Recommend `create-translation-terms` for adding translations to terms.
-
-### Step 10: Create Translations (Optional, Multisite Only)
-
-**Skill:** `create-translations`
-**Output:** `content/collections/{collection}/{non-default-site}/{slug}.md`
-
-For each default-site entry created in Step 8, create translation entries for all non-default sites. This skill is for **collection entry translations only**.
-
-Only include fields marked `localizable: true` in the blueprint.
-
-Do NOT use this for taxonomy terms — use `create-translation-terms` instead.
-
-### Step 11: Create Translation Terms (Optional, Multisite Only)
-
-**Skill:** `create-translation-terms`
-**Output:** Edits existing `content/taxonomies/{taxonomy}/{slug}.yaml` (adds `localizations` key)
-
-For each term created in Step 9, add translations for all non-default sites by adding the `localizations` key to existing term files. This skill is for **taxonomy term translations only**.
-
-Taxonomy terms store translations within the same file (via `localizations`), unlike collection entries which use separate files per site.
-
-Do NOT use this for collection entries — use `create-translations` instead.
-
-### Step 12: Create Globals (Optional)
-
-**Skill:** `create-globals`
-**Output:** `content/globals/{handle}.yaml` + `content/globals/{site}/{handle}.yaml`
-
-For each schema file with `schema_type: global`, create the global set config and data files.
-
-Also recommend creating global blueprints using `create-blueprints`.
-
-### Step 13: Create Forms (Optional)
-
-**Skill:** `create-forms`
-**Output:** `resources/forms/{handle}.yaml` + `resources/blueprints/forms/{handle}.yaml`
-
-For each schema file with `schema_type: form`, create the form config, blueprint, and email templates.
-
-### Step 14: Create Navigations (Optional)
-
-**Skill:** `create-navigations`
-**Output:** `content/navigation/{handle}.yaml` + `content/trees/navigation/{handle}.yaml`
-
-For each schema file with `schema_type: navigation`, create the navigation config and tree.
-
----
-
-## Batch Execution (Run All)
-
-After schema creation, the user may ask to run all remaining steps at once (e.g., "run all", "do everything", "create it all"). When this happens, the agent **must execute each skill in the correct dependency order**, invoking one skill at a time sequentially.
-
-### Execution Order
-
-When running all steps, execute the applicable skills in this exact order. **Skip any step that has no matching schemas.**
-
-| Order | Skill | Condition |
-|-------|-------|-----------|
-| 0 (optional) | `scan-project` | User wants to scan existing project before building |
-| 1 | `create-collections` | Any schema with `schema_type: collection` |
-| 2 | `create-blueprints` | Any collection or taxonomy that needs blueprints |
-| 3 | `mount-collections` | Any collection schema with a `mount` value AND `has_archive` is not `false` |
-| 4 | `create-taxonomies` | Any schema with `schema_type: taxonomy` |
-| 5 | `create-blueprints` | Any taxonomy that needs blueprints (second pass) |
-| 6 | `attach-taxonomies` | Any collection with `taxonomy_relationship` in its schema |
-| 7 | `create-entries` | If user wants sample entries (collections only) |
-| 8 | `create-terms` | If user wants sample terms (taxonomies only) |
-| 9 | `create-translations` | Multisite only — collection entry translations |
-| 10 | `create-translation-terms` | Multisite only — taxonomy term translations |
-| 11 | `create-globals` | Any schema with `schema_type: global` |
-| 12 | `create-forms` | Any schema with `schema_type: form` |
-| 13 | `create-navigations` | Any schema with `schema_type: navigation` |
-
-### Rules for Batch Execution
-
-1. **Use the right skill for each step.** Never combine responsibilities — always invoke the dedicated skill for each operation (e.g., use `create-collections` for collections, `create-taxonomies` for taxonomies, `create-entries` for entries, `create-terms` for terms).
-2. **Execute sequentially, not in parallel.** Each skill depends on the output of prior skills (e.g., blueprints need collections to exist first, mounting needs collections and blueprints).
-3. **Handle the `pages` collection dependency.** If any collection requires mounting but there is no `pages` schema, create the `pages` collection and its blueprint first before other collections.
-4. **Report progress after each skill.** Even in batch mode, briefly report what was created after each skill completes before moving to the next (e.g., "Created collections: blog_posts, pages. Moving on to blueprints...").
-5. **Stop on errors.** If a skill fails or encounters a problem, stop the batch and report the issue to the user rather than continuing with broken state.
-6. **Resolve relationships inline.** If `collection_relationship` references are found during batch execution, create the referenced collections as part of the batch (following the same order: collection → blueprint → mount).
-
-### Partial Batch
-
-The user may also request a subset of steps at once (e.g., "create collections, blueprints, and taxonomies"). In this case, execute only the requested steps, still in the correct dependency order from the table above.
-
----
-
-## Workflow Summary
+# Statamic Content Builder — Agent Guide
+
+This document is a routing guide for which skills to use and when. Each skill file in `.claude/skills/` contains its own thorough instructions — read the skill file before executing it.
+
+## General Project Rules
+
+- **Statamic 6** — This is a Statamic 6 project. When unsure about APIs or conventions, check the Statamic docs at `statamic.dev` and verify the installed version via `composer.json`.
+- **Check addons** — Before creating blueprints or views, check `composer.json` for installed addons (SEO Pro, Bard, etc.) that may affect field types or template tags.
+- **Antlers by default** — Use `.antlers.html` for all view templates unless the user explicitly requests Blade (`.blade.php`).
+- **Tailwind CSS + Vite** — Frontend uses Tailwind CSS for styling and Vite for asset bundling.
+- **Detect multisite first** — Always read `resources/sites.yaml` before creating any content. If multisite, include `sites`, `propagate`, and `localizable` fields where required.
+- **Schema files are the source of truth** — All downstream creation skills read from `schemas/*.md` to know what to build.
+- **Each skill has strict file boundaries** — A skill only creates/edits the files it owns. Never combine responsibilities across skills.
+
+## Skill Reference
+
+### Analysis & Reporting (read-only)
+
+| Skill | When to Use |
+|-------|-------------|
+| `scan-project` | Audit an existing project — generates a full inventory report. Offers follow-up: generate view boilerplates for missing views, or run schema drift check if `schemas/` exists. |
+| `check-schema-drift` | Compare `schemas/*.md` against actual project state — finds mismatches, missing items, extras. Run standalone or as a follow-up from `scan-project` (reuses project data already in context to avoid duplicate reads). |
+
+### Schema Design
+
+| Skill | When to Use |
+|-------|-------------|
+| `create-schema` | First step for new builds. User describes what they need → generates `schemas/*.md` files that drive all downstream skills. |
+
+### Content Structure Creation
+
+| Skill | When to Use |
+|-------|-------------|
+| `create-collections` | Create collection configs from schemas (`content/collections/*.yaml`). |
+| `create-taxonomies` | Create taxonomy configs from schemas (`content/taxonomies/*.yaml`). |
+| `create-blueprints` | Create/update blueprint YAML files for collections, taxonomies, globals, forms, navigations (`resources/blueprints/`). |
+| `create-fieldsets` | Create reusable fieldsets (`resources/fieldsets/*.yaml`). |
+| `mount-collections` | Create mount page entries and add `mount` to collection configs. Only for collections with `has_archive: true`. |
+| `attach-taxonomies` | Attach taxonomies to collections (adds `taxonomies` to collection config, `term_template` to taxonomy config). |
+| `create-globals` | Create global set configs and data files (`content/globals/`). |
+| `create-forms` | Create form configs, blueprints, and email templates (`resources/forms/`). |
+| `create-navigations` | Create navigation configs and trees (`content/navigation/`, `content/trees/`). |
+
+### Content Population
+
+| Skill | When to Use |
+|-------|-------------|
+| `create-entries` | Create collection entries only. For multisite, creates default-site entries only. |
+| `create-terms` | Create taxonomy terms only. |
+| `create-translations` | Multisite only — create translated entries for non-default sites. |
+| `create-translation-terms` | Multisite only — add translations to existing term files. |
+
+### Views & Frontend
+
+| Skill | When to Use |
+|-------|-------------|
+| `create-view-boilerplates` | Generate `.antlers.html` templates and layouts for collections/taxonomies based on their blueprints. Only creates missing views, never overwrites. |
+| `create-page-templates` | Work with the base layout and page-level templates (`resources/views/`). |
+| `create-static-pages` | Create static pages with Antlers templates. |
+| `create-static-pages-from-html` | Convert existing HTML files into Statamic page templates. |
+| `frontend-screenshot-to-tailwind` | Convert a screenshot into a Tailwind CSS implementation. |
+| `frontend-figma-mcp-tailwind` | Convert Figma designs (via MCP) into Tailwind CSS implementation. |
+
+## Build Workflow (Dependency Order)
+
+When building from schemas, execute skills in this order. Skip any step that has no matching schemas.
 
 ```
-User describes what they need
-        |
-        v
-[1] create-schema              --> schemas/*.md
-        |
-        v
-    Present next steps to user, offer step-by-step or "run all"
-        |
-        +-----------+-----------+
-        |                       |
-   Step-by-step            Batch ("run all")
-        |                       |
-        v                       v
-  User picks a step       Execute all applicable
-  --> execute             skills sequentially
-  --> report & repeat     in dependency order
-        |                       |
-        v                       v
-[2]  create-collections         |
-[3]  create-blueprints          |  Same skills,
-[4]  mount-collections          |  same order,
-[5]  create-taxonomies          |  no pauses
-[6]  create-blueprints (tax)    |  between steps
-[7]  attach-taxonomies          |
-[8]  resolve relationships      |
-[9]  create-entries             |
-[10] create-terms               |
-[11] create-translations        |
-[12] create-translation-terms   |
-[13] create-globals             |
-[14] create-forms               |
-[15] create-navigations         |
+[0]  scan-project              (optional — audit existing project first)
+[1]  create-schema             --> schemas/*.md
+[2]  create-collections        --> collection configs
+[3]  create-blueprints         --> collection blueprints
+[4]  mount-collections         --> mount pages (only if has_archive: true)
+[5]  create-taxonomies         --> taxonomy configs
+[6]  create-blueprints         --> taxonomy blueprints (second pass)
+[7]  attach-taxonomies         --> wire up taxonomy-collection relationships
+[8]  create-globals            --> global configs + blueprints
+[9]  create-forms              --> form configs + blueprints
+[10] create-navigations        --> navigation configs + trees
+[11] create-view-boilerplates  --> templates + layouts for collections/taxonomies
+[12] create-entries            (optional — sample entries)
+[13] create-terms              (optional — sample terms)
+[14] create-translations       (optional — multisite entry translations)
+[15] create-translation-terms  (optional — multisite term translations)
+[16] check-schema-drift        (optional — verify project matches schemas)
 ```
 
-## Key Rules
+## Batch Execution Rules
 
-- **Never auto-execute unless the user opts in.** In step-by-step mode, recommend the next step and wait for confirmation. In batch mode (user said "run all" or similar), execute all applicable steps sequentially without pausing between them.
-- **Each skill has strict file boundaries.** A skill only creates/edits the files it owns. It never touches files owned by another skill.
-- **Always detect multisite first.** Read `resources/sites.yaml` before creating any content. If multisite, include `sites`, `propagate`, and `localizable` fields where required.
-- **Schema files are the source of truth.** All downstream skills read from `schemas/*.md` to know what to build.
-- **Surface dependencies early.** If a step requires something that doesn't exist yet (e.g., mounting needs a pages collection), inform the user and recommend the prerequisite step first.
-- **Respect `has_single` and `has_archive` from schemas.** Collections with `has_single: false` have no routes, templates, or layouts. Collections with `has_archive: false` are never mounted. Taxonomies with `has_single: false` have no routes or term templates.
-- **Mount collections only when `has_archive` allows it.** If a collection schema has a `mount` value and `has_archive` is not `false`, it must be mounted on a page in the pages collection. Skip mounting for collections with `has_archive: false`.
-- **Scan before build (optional).** If the user has an existing project, recommend running `scan-project` first to understand what already exists. The scan report can inform schema creation and prevent accidental duplication.
+When the user says "run all" or similar:
+
+1. Execute skills sequentially in the order above — each depends on prior steps.
+2. Skip steps with no matching schemas.
+3. If any collection needs mounting but `pages` doesn't exist yet, create it first.
+4. Report progress briefly after each skill before moving to the next.
+5. Stop on errors — don't continue with broken state.
+6. Resolve `collection_relationship` references inline (create referenced collections as part of the batch).
+
+In step-by-step mode, recommend the next step and wait for user confirmation.
