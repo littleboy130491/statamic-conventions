@@ -148,7 +148,10 @@ Taxonomies do NOT have routes — Statamic handles taxonomy routing automaticall
 schema_name: {handle}
 schema_type: taxonomy
 title: {Display Title}
-has_single: {true/false}
+has_index: {true/false, default: true — omit if true}
+has_show: {true/false, default: true — omit if true}
+has_collection_index: {true/false, default: true — omit if true, only when collections listed}
+has_collection_show: {true/false, default: true — omit if true, only when collections listed}
 collections: - {collection1} - {collection2}
 multisite: {true/false}
 sites: {- site1 - site2, only if multisite: true}
@@ -159,18 +162,27 @@ title | text | required | localizable
 {additional fields if any}
 ```
 
-**`has_single` explained:**
+**Taxonomy view fields explained:**
 
-- **`has_single: true`** (default) — Terms have their own public pages. Downstream skills will create `template`, `layout`, and `preview_targets` in the taxonomy config, and generate view boilerplates for term pages.
-- **`has_single: false`** — Terms are data-only (used for tagging/filtering but have no public term pages). Downstream skills will omit `template`, `layout`, and `preview_targets`.
+Each field maps to one of the 4 taxonomy view types in Statamic. All default to `true` — only include a field when setting it to `false`.
 
-**Example:**
+| Field | View Path | URL Pattern | Purpose |
+|-------|-----------|-------------|---------|
+| `has_index` | `{taxonomy}/index` | `/{taxonomy}` | Lists all terms |
+| `has_show` | `{taxonomy}/show` | `/{taxonomy}/{term}` | Entries for a term (all collections) |
+| `has_collection_index` | `{collection}/{taxonomy}/index` | `/{collection}/{taxonomy}` | Terms for one collection only |
+| `has_collection_show` | `{collection}/{taxonomy}/show` | `/{collection}/{taxonomy}/{term}` | Entries for a term (one collection only) |
+
+- **All true** (default) — Full public taxonomy with all 4 view types. Downstream skills will include `layout` and `preview_targets` in the taxonomy config and generate all view boilerplates.
+- **All false** — Terms are data-only (used for tagging/filtering but have no public pages). Downstream skills will omit `layout` and `preview_targets`.
+- `has_collection_index` and `has_collection_show` only apply when `collections` is listed. If no collections are attached, these fields are ignored.
+
+**Example (default — all views enabled, fields omitted):**
 
 ```
 schema_name: categories
 schema_type: taxonomy
 title: Categories
-has_single: true
 collections: - blog_posts - projects
 multisite: true
 sites: - english - indonesian
@@ -180,6 +192,23 @@ fields:
 title | text | required | localizable
 description | textarea | optional | localizable
 icon | assets | optional | localizable | max_files: 1
+```
+
+**Example (data-only taxonomy — no public pages):**
+
+```
+schema_name: internal_flags
+schema_type: taxonomy
+title: Internal Flags
+has_index: false
+has_show: false
+collections: - blog_posts
+multisite: true
+sites: - english - indonesian
+
+blueprint: internal_flags
+fields:
+title | text | required | localizable
 ```
 
 ### Global Schema
@@ -293,7 +322,7 @@ team_members | grid | optional | localizable
 8. **Every collection MUST have `has_single` and `has_archive`.**
    - Collection `has_single: false` → omit `route`. Downstream skills will NOT create templates or layouts for this collection.
    - Collection `has_archive: false` → omit `mount`. Do NOT ask the user whether they want to mount the collection.
-9. **Taxonomies do NOT have `route`.** Statamic handles taxonomy routing automatically. Taxonomies DO have `has_single` to control whether terms have public pages.
+9. **Taxonomies do NOT have `route`.** Statamic handles taxonomy routing automatically. Taxonomies use `has_index`, `has_show`, `has_collection_index`, and `has_collection_show` to control which view types are enabled (all default to `true` — only include when setting to `false`). `has_collection_index` and `has_collection_show` only apply when `collections` is listed.
 10. **If requirements are unclear**, ask the user before writing. Do not guess.
 11. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
 
@@ -306,8 +335,8 @@ Before finishing, verify:
 - [ ] Collections with `has_single: false` do NOT have `route`
 - [ ] Collections with `has_archive: false` do NOT have `mount`
 - [ ] Taxonomy schemas do NOT have `route`
-- [ ] Taxonomy schemas with `has_single: true` signal downstream skills to create template/layout/preview_targets
-- [ ] Every taxonomy schema has `has_single`
+- [ ] Taxonomy view fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show`) are only present when set to `false` (all default to `true`)
+- [ ] `has_collection_index` and `has_collection_show` are only used when `collections` is listed
 - [ ] Each collection schema has at least one blueprint with fields
 - [ ] Multisite schemas have `localizable` on appropriate fields
 - [ ] Collections with `entries` fields referencing other collections have matching `collection_relationship` list

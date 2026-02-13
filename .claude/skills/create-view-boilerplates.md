@@ -69,23 +69,25 @@ If the mount page entry has no `template` value, skip it (it uses the default pa
 For each root-level `.yaml` file in `content/taxonomies/` (not term files in subdirectories):
 
 1. Read the taxonomy config file
-2. Determine `has_single` — true if `layout` or `preview_targets` is present in the config (taxonomies typically do not have `template` or `term_template` — Statamic auto-resolves views by naming convention)
-3. Skip taxonomies with `has_single: false` (no `layout`, no `preview_targets` — terms have no public pages)
+2. Determine if the taxonomy has any public views — true if `layout` or `preview_targets` is present in the config
+3. Skip taxonomies with no public views (no `layout`, no `preview_targets` — all view fields are `false`)
 4. If `layout` is configured, add it to the views list
 
 ### Step 4b: Derive Taxonomy Views
 
-Statamic supports 4 taxonomy view types that auto-activate when the corresponding view files exist. Taxonomy configs typically do NOT contain `template` or `term_template` — views are resolved by naming convention.
+Statamic supports 4 taxonomy view types controlled by schema fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show` — all default to `true`). Views auto-activate when the corresponding view files exist. Taxonomy configs typically do NOT contain `template` or `term_template` — views are resolved by naming convention.
 
-For each taxonomy with `has_single: true`:
+If a schema file exists at `schemas/{taxonomy}.md`, read the view fields to determine which views to generate. If no schema exists, generate all applicable views.
 
-1. **Taxonomy show view** — Derive `{taxonomy}/show` from the taxonomy handle. Add to the views list.
-2. **Taxonomy index view** — Derive `{taxonomy}/index` from the taxonomy handle. Add to the views list.
+For each taxonomy with public views:
 
-For each collection config that lists a taxonomy in its `taxonomies` array (and that taxonomy has `has_single: true`):
+1. **Taxonomy index view** — If `has_index` is `true` (or not specified): derive `{taxonomy}/index`. Add to the views list.
+2. **Taxonomy show view** — If `has_show` is `true` (or not specified): derive `{taxonomy}/show`. Add to the views list.
 
-3. **Collection-scoped taxonomy index** — Derive `{collection}/{taxonomy}/index`. Add to the views list.
-4. **Collection-scoped term show** — Derive `{collection}/{taxonomy}/show`. Add to the views list.
+For each collection config that lists a taxonomy in its `taxonomies` array:
+
+3. **Collection-scoped taxonomy index** — If `has_collection_index` is `true` (or not specified): derive `{collection}/{taxonomy}/index`. Add to the views list.
+4. **Collection-scoped term show** — If `has_collection_show` is `true` (or not specified): derive `{collection}/{taxonomy}/show`. Add to the views list.
 
 Cross-reference collection configs (Step 2) with taxonomy configs (Step 4) to build the complete list.
 
@@ -553,7 +555,7 @@ A generated layout for `resources/views/posts/layout.antlers.html`:
 12. **Archive templates must include a listing tag.** Mount page templates must include a `{{ collection:{handle} }}` block for the mounted collection.
 13. **Taxonomy term templates must include an `{{ entries }}` listing block.** Term show templates (both global and collection-scoped) must include an `{{ entries paginate="10" }}` block to list entries tagged with the term, with pagination support.
 16. **Taxonomy index templates must include a `{{ terms }}` listing block.** Both global (`{taxonomy}/index`) and collection-scoped (`{collection}/{taxonomy}/index`) index templates must include a `{{ terms taxonomy="{taxonomy}" }}` block.
-17. **Generate all 4 taxonomy view types.** For each taxonomy with `has_single: true`: generate `{taxonomy}/index` and `{taxonomy}/show`. For each collection-taxonomy attachment: generate `{collection}/{taxonomy}/index` and `{collection}/{taxonomy}/show`.
+17. **Generate taxonomy views per schema fields.** Check `has_index`, `has_show`, `has_collection_index`, `has_collection_show` from the schema (all default to `true`). Only generate views for fields that are `true`. Collection-scoped views only apply when collections are attached.
 14. **Always detect multisite in Step 1** before scanning for mount page entries, as page entry directories differ between single-site and multisite projects.
 15. **Use the Field Type Mapping Reference** for all field type rendering. For unknown types, fall back to `{{ if handle }}{{ handle }}{{ /if }}` with a comment.
 
@@ -573,7 +575,7 @@ Before finishing, verify:
 - [ ] Taxonomy term templates include an `{{ entries paginate="10" }}` listing block with pagination
 - [ ] Taxonomy index templates include a `{{ terms taxonomy="{taxonomy}" }}` listing block
 - [ ] Collection-scoped taxonomy views are generated for each collection-taxonomy attachment
-- [ ] All 4 taxonomy view types are covered: `{taxonomy}/index`, `{taxonomy}/show`, `{collection}/{taxonomy}/index`, `{collection}/{taxonomy}/show`
+- [ ] Taxonomy views match schema view fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show` — all default to `true`)
 - [ ] Layout boilerplates contain structural hooks only, no field rendering
 - [ ] The base `resources/views/layout.antlers.html` was not modified
 - [ ] No collection configs, taxonomy configs, blueprints, entries, or other out-of-scope files were created or edited

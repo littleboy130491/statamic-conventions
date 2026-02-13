@@ -36,11 +36,12 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 
 ### Step 2: Read Schema (if available)
 
-If a schema file exists at `schemas/{handle}.md`, read it to determine the `has_single` value. This controls which fields to include:
+If a schema file exists at `schemas/{handle}.md`, read the taxonomy view fields: `has_index`, `has_show`, `has_collection_index`, `has_collection_show`. All default to `true` if not specified.
 
-- **`has_single: false`** → Omit `layout` and `preview_targets`. Terms have no public pages.
+- **If ALL 4 are `false`** → Omit `layout` and `preview_targets`. Terms have no public pages.
+- **If ANY are `true`** (or not specified, since default is `true`) → Include `layout` and `preview_targets`.
 
-If no schema file exists, default to `has_single: true`.
+If no schema file exists, default to all views enabled.
 
 ### Step 3: Create Taxonomy Config
 
@@ -48,9 +49,9 @@ If no schema file exists, default to `has_single: true`.
 
 Use the appropriate template below. Copy it exactly, then replace `{handle}` with the actual taxonomy handle and `{Title}` with the display name. Do NOT skip any fields.
 
-#### Template A: Multisite + has_single: true (default)
+#### Template A: Multisite + views enabled (default)
 
-Use when multisite is detected AND `has_single` is `true` or not specified.
+Use when multisite is detected AND any taxonomy view field is `true` (or not specified — all default to `true`).
 
 ```yaml
 title: '{Title}'
@@ -66,9 +67,9 @@ preview_targets:
     refresh: true
 ```
 
-#### Template B: Single site + has_single: true (default)
+#### Template B: Single site + views enabled (default)
 
-Use when only one site is detected AND `has_single` is `true` or not specified.
+Use when only one site is detected AND any taxonomy view field is `true` (or not specified).
 
 ```yaml
 title: '{Title}'
@@ -81,9 +82,9 @@ preview_targets:
     refresh: true
 ```
 
-#### Template C: Multisite + has_single: false
+#### Template C: Multisite + all views disabled
 
-Use when multisite is detected AND `has_single: false`. Omits `template`, `layout`, `preview_targets`.
+Use when multisite is detected AND all 4 taxonomy view fields are `false`. Omits `layout`, `preview_targets`.
 
 ```yaml
 title: '{Title}'
@@ -93,9 +94,9 @@ sites:
 revisions: true
 ```
 
-#### Template D: Single site + has_single: false
+#### Template D: Single site + all views disabled
 
-Use when only one site is detected AND `has_single: false`. Omits `template`, `layout`, `preview_targets`.
+Use when only one site is detected AND all 4 taxonomy view fields are `false`. Omits `layout`, `preview_targets`.
 
 ```yaml
 title: '{Title}'
@@ -119,10 +120,9 @@ Statamic supports 4 taxonomy view types that auto-activate when the correspondin
 | Collection taxonomy index | `/{collection}/{taxonomy}` | `{collection}/{taxonomy}/index` | Terms for one collection only |
 | Collection single term | `/{collection}/{taxonomy}/{term}` | `{collection}/{taxonomy}/show` | Entries for a term (one collection only) |
 
-- The `template` field in the taxonomy config controls the **global single term** view (`{taxonomy}/show`).
-- **Index views** and **collection-scoped views** auto-activate based on view file naming conventions — no config field needed.
-- The `term_template` field (managed by the `attach-taxonomies` skill) controls collection-scoped term pages.
-- This skill only sets `template` and `layout`. For `term_template`, use `attach-taxonomies`. For generating the actual view files, use `create-view-boilerplates`.
+- All 4 view types auto-activate when the corresponding view files exist — no `template` or `term_template` config fields needed.
+- This skill only sets `layout` and `preview_targets`. Use `create-view-boilerplates` to generate the actual view files.
+- Which of the 4 views to generate is controlled by the schema fields: `has_index`, `has_show`, `has_collection_index`, `has_collection_show` (all default to `true`).
 
 ## Rules
 
@@ -135,7 +135,7 @@ Statamic supports 4 taxonomy view types that auto-activate when the correspondin
 7. Output valid YAML only.
 8. Always detect multisite in Step 1 before writing the taxonomy config. If multisite is enabled, you MUST include the `sites` field.
 9. Always use the complete YAML template from Step 3. Do NOT skip any fields.
-10. **If `has_single: false`** — do NOT include `layout` or `preview_targets`.
+10. **If all taxonomy view fields are `false`** — do NOT include `layout` or `preview_targets`.
 11. **Never include `template`, `term_template`, or `route`** — Statamic auto-resolves views by naming convention and handles routing automatically.
 
 ## Accuracy Checks
@@ -144,8 +144,8 @@ Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path is `content/taxonomies/{handle}.yaml`
 - [ ] All fields from the matching Step 3 template are present (no fields skipped)
-- [ ] If `has_single: true` (or not specified): `layout` and `preview_targets` are present
-- [ ] If `has_single: false`: `layout` and `preview_targets` are NOT present
+- [ ] If any taxonomy view field is `true` (or not specified — default is `true`): `layout` and `preview_targets` are present
+- [ ] If all taxonomy view fields are `false`: `layout` and `preview_targets` are NOT present
 - [ ] No `template` or `term_template` field is present (Statamic auto-resolves views by naming convention)
 - [ ] No `route` field is present (taxonomies never use `route`)
 - [ ] If multisite is enabled: `sites` lists all site keys

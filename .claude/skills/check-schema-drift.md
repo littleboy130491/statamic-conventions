@@ -57,7 +57,7 @@ Read every `.md` file in `schemas/`. For each file, parse the key-value header a
 **Header keys to extract per schema type:**
 
 - **Collection:** `schema_name`, `schema_type`, `title`, `has_single`, `has_archive`, `route`, `dated`, `structure`, `structure_max_depth`, `mount`, `taxonomy_relationship`, `collection_relationship`, `multisite`, `sites`
-- **Taxonomy:** `schema_name`, `schema_type`, `title`, `has_single`, `collections`, `multisite`, `sites`
+- **Taxonomy:** `schema_name`, `schema_type`, `title`, `has_index`, `has_show`, `has_collection_index`, `has_collection_show`, `collections`, `multisite`, `sites`
 - **Global:** `schema_name`, `schema_type`, `title`, `multisite`, `sites`
 - **Form:** `schema_name`, `schema_type`, `title`, `store`, `honeypot`, `email_to`, `email_subject`
 - **Navigation:** `schema_name`, `schema_type`, `title`, `max_depth`, `collections`, `multisite`, `sites`
@@ -100,8 +100,8 @@ For each `.yaml` file in `content/collections/`:
 #### 2c. Taxonomies
 For each root-level `.yaml` file in `content/taxonomies/`:
 1. Read the taxonomy config
-2. Record: `title`, `template` (if present), `layout`, `term_template` (if present), `sites`
-3. Determine `has_single` — true if any of `template`, `layout`, or `preview_targets` is present; false if none are present (taxonomies do NOT use `route`, and `template`/`term_template` are typically omitted in favor of auto-resolution by naming convention)
+2. Record: `title`, `layout`, `sites`
+3. Determine which views are enabled — if `layout` or `preview_targets` is present, the taxonomy has public views. Cross-reference with schema fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show` — all default to `true`)
 
 #### 2d. Globals
 For each `.yaml` file in `content/globals/` (root level only):
@@ -171,7 +171,7 @@ For each actual collection NOT in any schema → extra in project.
 For each taxonomy schema:
 1. **Existence** — Does the taxonomy config exist at `content/taxonomies/{schema_name}.yaml`?
 2. **Config values** — Compare:
-   - `has_single` — schema `has_single` vs. actual (true if `template` present, false if absent). Taxonomies do NOT use `route`.
+   - **View fields** — schema `has_index`, `has_show`, `has_collection_index`, `has_collection_show` (all default to `true`) vs. actual (determined by whether `layout`/`preview_targets` is present and which view files exist). Taxonomies do NOT use `route`.
    - `collections` — schema `collections` list vs. which actual collections have this taxonomy in their `taxonomies` config
    - `sites` — schema sites list vs. actual `sites` list
 
@@ -243,12 +243,12 @@ For each collection schema with `has_single: true`:
 - If the actual collection config has a `template` value, check for that specific file
 - If no template value exists in the actual config, check for a default pattern (e.g., `{handle}/show.antlers.html`)
 
-For each taxonomy schema with `has_single: true`:
-- Check if the taxonomy show view exists (`{taxonomy}/show.antlers.html` or the configured `template` value)
-- Check if the taxonomy index view exists (`{taxonomy}/index.antlers.html`)
-- For each collection listed in the taxonomy schema's `collections`: check if collection-scoped views exist:
-  - `{collection}/{taxonomy}/index.antlers.html`
-  - `{collection}/{taxonomy}/show.antlers.html`
+For each taxonomy schema, check view files per schema view fields (all default to `true`):
+- If `has_index`: check `{taxonomy}/index.antlers.html`
+- If `has_show`: check `{taxonomy}/show.antlers.html`
+- For each collection listed in the taxonomy schema's `collections`:
+  - If `has_collection_index`: check `{collection}/{taxonomy}/index.antlers.html`
+  - If `has_collection_show`: check `{collection}/{taxonomy}/show.antlers.html`
 
 Report missing view files.
 
@@ -338,7 +338,7 @@ Project: {project root directory name}
 
 ### Taxonomy Config Diffs
 
-{Same table format as collections, comparing has_single, collections, sites.}
+{Same table format as collections, comparing has_index, has_show, has_collection_index, has_collection_show, collections, sites.}
 
 ---
 
@@ -430,7 +430,7 @@ Project: {project root directory name}
 
 ## 8. View Files
 
-{For each collection/taxonomy schema with has_single: true:}
+{For each collection schema with has_single: true, and each taxonomy schema per its view fields:}
 
 | Type | Handle | Expected View | Status |
 |------|--------|---------------|--------|
@@ -567,14 +567,14 @@ Before finishing, verify:
 - [ ] Every blueprint under `resources/blueprints/` was read
 - [ ] Multisite configuration was compared (schema vs. `resources/sites.yaml`)
 - [ ] All collection config properties were compared (route, dated, structure, mount, taxonomies, sites)
-- [ ] All taxonomy config properties were compared (has_single, collections, sites)
+- [ ] All taxonomy config properties were compared (has_index, has_show, has_collection_index, has_collection_show, collections, sites)
 - [ ] All global, form, and navigation config properties were compared
 - [ ] All blueprint existence was checked (schema blueprints vs. actual blueprint files)
 - [ ] All field-level comparisons were done for blueprints existing in both schema and project
 - [ ] SEO fields (`seo`, `seo_previews`) and `slug` were silently skipped as extras
 - [ ] Mount references were resolved (schema slug vs. actual UUID → page entry)
 - [ ] View file existence was checked for all `has_single: true` collection schemas
-- [ ] Taxonomy view files checked for all 4 types: `{taxonomy}/show`, `{taxonomy}/index`, `{collection}/{taxonomy}/index`, `{collection}/{taxonomy}/show`
+- [ ] Taxonomy view files checked per schema fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show`)
 - [ ] Summary counts are accurate
 - [ ] Full Drift Inventory table lists every individual drift found
 - [ ] Severity levels are assigned correctly
