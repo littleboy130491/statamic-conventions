@@ -39,6 +39,7 @@ The timestamped filename ensures each scan produces a unique file and previous r
 3. **List entries and terms** — Title of every entry/term, per collection/taxonomy, per site (if multisite)
 4. **Map relationships** — Taxonomy attachments, mounts, entry field references, fieldset imports
 5. **Write report** — Output structured markdown to `reports/project-scan-{YYYYMMDD-HHmm}.md`
+6. **Follow up** — If missing view files detected, offer to generate boilerplates via `create-view-boilerplates`
 
 ## Workflow
 
@@ -566,6 +567,42 @@ Use `--` for absent/empty values. Do not omit sections — if no items exist for
 11. **Handle replicator and grid sub-fields.** Blueprint fields of type `replicator` or `grid` contain nested field definitions. List these as indented sub-fields in the blueprint field details.
 12. **Do not auto-generate schemas.** Only generate reverse-engineered `schemas/*.md` files if the user explicitly requests it. If schema files already exist, warn before overwriting.
 13. **Check view file existence.** For every `template`, `layout`, and `term_template` value in collection and taxonomy configs, check whether the corresponding view file exists in the project's `resources/views/` directory. Check for both `.antlers.html` and `.blade.php` extensions. Report the actual path and extension found, or mark as `MISSING` if neither exists. If the config value is absent (`--`), skip the check.
+
+## Follow Up Questions
+
+After writing the report, present follow-up options based on the scan results. Only include options that are relevant — skip any where the condition is not met.
+
+### 1. Missing View Files
+
+If any `template`, `layout`, or `term_template` values were marked as `MISSING` in the View File Status tables (collections or taxonomies), ask the user:
+
+> The scan found **{N}** missing view file(s):
+> - `resources/views/{value}.antlers.html` — {collection/taxonomy} {view type}
+> - `resources/views/{value}.antlers.html` — {collection/taxonomy} {view type}
+> - ...
+>
+> Would you like me to generate boilerplate view files for these using the `create-view-boilerplates` skill?
+
+List every missing view file path so the user can see exactly what would be created.
+
+If the user confirms, invoke the `create-view-boilerplates` skill to generate the missing `.antlers.html` files. That skill will read the relevant blueprints and produce documented, field-aware boilerplate templates and layouts.
+
+### 2. Schema Drift Check
+
+If the `schemas/` directory exists and contains at least one `.md` file, ask the user:
+
+> The project has **{N}** schema file(s) in `schemas/`. Would you like me to check for schema drift — comparing the schemas against the actual project state to find mismatches, missing items, or extras?
+
+If the user confirms, proceed to run the `check-schema-drift` skill **without re-reading project files**. All project data gathered during this scan (multisite config, collection configs, taxonomy configs, global configs, form configs, navigation configs, blueprints, fieldsets, view file existence) is already in context. The drift check should:
+1. Read and parse the `schemas/*.md` files (Step 1 of `check-schema-drift`)
+2. Skip Step 2 (Read Actual Project State) entirely — reuse the data already gathered during this scan
+3. Proceed directly to Step 3 (Compare Schema vs. Actual) using the scan data
+4. Write the drift report to `reports/schema-drift-{YYYYMMDD-HHmm}.md`
+5. Present drift-specific follow-up questions as defined in `check-schema-drift`
+
+This avoids re-reading every project file a second time.
+
+If no `schemas/` directory exists or it is empty, skip this question.
 
 ## Accuracy Checks
 
