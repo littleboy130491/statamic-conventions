@@ -1,105 +1,286 @@
 # Create Navigations
 
-Create or update Statamic navigation configs, trees, and nav item blueprints.
+Create Statamic navigation configs, trees, and (optionally) nav item blueprints from navigation schema files.
+
+## Input
+
+This skill reads **navigation schema files** from `schemas/{handle}_nav.md`. These are created by the `create-schema-navigation` skill.
+
+If no schema file exists for the requested navigation, ask the user to run `create-schema-navigation` first, or ask them to describe the navigation so you can proceed manually.
+
+## Schema Format Reference
+
+Each schema file has this structure:
+
+```
+schema_name: {handle}
+schema_type: navigation
+title: {Display Title}
+max_depth: {number}
+collections: - {collection1} - {collection2}
+multisite: {true/false}
+sites: {- site1 - site2, only if multisite: true}
+
+tree:
+- {Label} | {type} | {reference}
+  - {Child Label} | {type} | {reference}
+```
+
+### Schema Item Types
+
+| Type | Reference Format | What to Generate |
+|------|-----------------|------------------|
+| `entry` | `{collection}/{slug}` | Look up entry UUID from `content/collections/{collection}/{slug}.md` → use `entry: {uuid}` |
+| `archive` | `{collection}` | Find the mount entry for that collection (the page whose slug matches the collection's `mount` value) → use `entry: {mount-entry-uuid}` |
+| `term` | `{taxonomy}/{slug}` | Resolve URL from taxonomy route config → use `title: {Label}` and `url: {resolved-url}` (hardcoded link) |
+| `link` | `{url}` | Use `title: {Label}` and `url: {url}` |
+| `text` | _(none)_ | Use `title: {Label}` only (no `url`, no `entry`) |
+
+**Note on `term` type:** Statamic's navigation does NOT natively support taxonomy terms as a node type — only entries, URLs, and text. The `term` type in the schema is resolved into a hardcoded URL link node. See Step 3 for how to resolve the URL.
+
+### Tree Indentation in Schema
+
+- Top-level: `- Item` → top-level tree node
+- 2-space indent: `  - Item` → `children` of parent
+- 4-space indent: `    - Item` → `children` of child (grandchild)
 
 ## Quick Start
 
-1. **Detect multisite first** — Check `resources/sites.yaml`
-2. Create nav config: `content/navigation/{handle}.yaml`
-3. Create nav tree: `content/trees/navigation/{handle}.yaml`
-4. Create blueprint (optional): `resources/blueprints/navigation/{handle}.yaml`
+1. **Read the schema** — `schemas/{handle}_nav.md`
+2. **Detect multisite** — Check `resources/sites.yaml`
+3. **Resolve entry UUIDs** — Scan entry files to map `collection/slug` → UUID
+4. **Create nav config** — `content/navigation/{handle}.yaml`
+5. **Create nav tree** — `content/trees/navigation/{handle}.yaml` (or per-site)
 
-## Navigation Config
+## Workflow
+
+### Step 1: Read the Schema
+
+Read `schemas/{handle}_nav.md` and parse:
+- `schema_name` → navigation handle
+- `title` → display title for CP
+- `max_depth` → max nesting level
+- `collections` → collections to attach
+- `multisite` / `sites` → site configuration
+- `tree` → the full menu structure with item types and references
+
+### Step 2: Detect Multisite
+
+Read `resources/sites.yaml` — cross-check against schema's `multisite` and `sites` values.
+
+- Single site → one tree file at `content/trees/navigation/{handle}.yaml`
+- Multisite → one tree file per site at `content/trees/navigation/{site}/{handle}.yaml`
+
+### Step 3: Resolve Entry UUIDs
+
+For every `entry` and `archive` item in the schema tree, you need the entry's UUID.
+
+**For `entry` type** (`{collection}/{slug}`):
+1. Read `content/collections/{collection}/{slug}.md` (or the site-specific variant for multisite)
+2. Extract the `id:` value from the YAML front matter — that's the UUID
+
+**For `archive` type** (`{collection}`):
+1. Read the collection config `content/collections/{collection}.yaml` to find the `mount` value (a UUID)
+2. Use that mount UUID directly as the `entry` value — this is the page entry that serves as the archive
+
+**For `term` type** (`{taxonomy}/{slug}`):
+Statamic navigation does NOT support taxonomy terms natively — only entries, hardcoded URLs, and text. So `term` items become hardcoded URL links.
+1. Read the taxonomy config `content/taxonomies/{taxonomy}.yaml` to find the `route` (e.g., `/categories/{slug}`)
+2. Replace `{slug}` in the route with the term's slug to get the final URL
+3. Generate a `link` node with `title: {Label}` and `url: {resolved-url}`
+
+Example: `term` reference `categories/news` + taxonomy route `/categories/{slug}` → URL `/categories/news`
+
+**If an entry file doesn't exist yet** (collection/entries not created), you have two options:
+- Ask the user to run `create-entries` or `create-static-pages` first
+- Generate a UUID yourself using the standard format (e.g., `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`) and note that the entry must be created with this ID
+
+### Step 4: Create Navigation Config
 
 **Path:** `content/navigation/{handle}.yaml`
+
+```yaml
+title: {title from schema}
+max_depth: {max_depth from schema}
+collections:
+  - {collection1}
+  - {collection2}
+```
+
+For multisite, add `sites`:
 
 ```yaml
 title: Header Navigation
 max_depth: 2
 collections:
   - pages
-  - posts
+  - services
 sites:
   - english
   - indonesian
 ```
 
-### Config Fields
-
-| Field | Description |
-|-------|-------------|
-| `title` | Display name in CP (required) |
-| `max_depth` | Maximum nesting level |
-| `collections` | Collections to select entries from |
-| `sites` | Site handles (multisite) |
-
-## Navigation Tree
+### Step 5: Create Navigation Tree
 
 **Path:**
 - Single site: `content/trees/navigation/{handle}.yaml`
 - Multisite: `content/trees/navigation/{site}/{handle}.yaml`
 
+Convert the schema tree into YAML tree format. Each node needs a unique `id`.
+
+**ID generation:** Use `{handle}-{sequential-number}` pattern (e.g., `header-1`, `header-2`, `header-3`).
+
+#### Mapping Schema Items to YAML Nodes
+
+**`entry` type** → entry reference node:
+```
+Schema:  - About | entry | pages/about
+```
+```yaml
+-
+  id: header-2
+  entry: d6f1c8a2-3b4e-4f5a-8c7d-9e0f1a2b3c4d    # UUID from pages/about.md
+```
+
+**`archive` type** → entry reference node (using mount entry):
+```
+Schema:  - Blog | archive | blog_posts
+```
+```yaml
+-
+  id: header-4
+  entry: a1b2c3d4-5e6f-7a8b-9c0d-e1f2a3b4c5d6    # UUID of the mount page
+```
+
+**`term` type** → hardcoded URL node (resolved from taxonomy route):
+```
+Schema:  - News | term | categories/news
+```
+```yaml
+# Taxonomy route: /categories/{slug} → resolved URL: /categories/news
+-
+  id: header-5
+  title: News
+  url: /categories/news
+```
+
+**`link` type** → custom URL node:
+```
+Schema:  - GitHub | link | https://github.com/example
+```
+```yaml
+-
+  id: header-6
+  title: GitHub
+  url: https://github.com/example
+```
+
+**`text` type** → text-only node (section header):
+```
+Schema:  - Company | text
+```
+```yaml
+-
+  id: footer-1
+  title: Company
+```
+
+#### Children / Nesting
+
+Schema indentation maps to YAML `children`:
+
+```
+Schema:
+- Services | archive | services
+  - Web Dev | entry | services/web-development
+  - Mobile | entry | services/mobile-apps
+```
+
+```yaml
+-
+  id: header-3
+  entry: mount-uuid-of-services
+  children:
+    -
+      id: header-4
+      entry: uuid-of-web-development
+    -
+      id: header-5
+      entry: uuid-of-mobile-apps
+```
+
+### Step 5b: Multisite Trees
+
+For multisite, create one tree file per site. The tree structure is the same but entry UUIDs may differ between sites if entries are localized.
+
+For each site:
+1. Read entry files from `content/collections/{collection}/{site}/{slug}.md` (or the default site path)
+2. Resolve UUIDs per site
+3. Write to `content/trees/navigation/{site}/{handle}.yaml`
+
+## Full Example
+
+**Schema input** (`schemas/header_nav.md`):
+```
+schema_name: header
+schema_type: navigation
+title: Header Navigation
+max_depth: 2
+collections: - pages - services
+multisite: false
+
+tree:
+- Home | entry | pages/home
+- About | entry | pages/about
+- Services | archive | services
+  - Web Development | entry | services/web-development
+  - Mobile Apps | entry | services/mobile-apps
+- Blog | link | https://blog.example.com
+- Contact | entry | pages/contact
+```
+
+**Generated config** (`content/navigation/header.yaml`):
+```yaml
+title: Header Navigation
+max_depth: 2
+collections:
+  - pages
+  - services
+```
+
+**Generated tree** (`content/trees/navigation/header.yaml`):
 ```yaml
 tree:
   -
-    id: nav-item-1
-    entry: home-entry-uuid
+    id: header-1
+    entry: 11111111-1111-1111-1111-111111111111
   -
-    id: nav-item-2
-    entry: about-entry-uuid
+    id: header-2
+    entry: 22222222-2222-2222-2222-222222222222
+  -
+    id: header-3
+    entry: 33333333-3333-3333-3333-333333333333
     children:
       -
-        id: nav-item-3
-        entry: team-entry-uuid
+        id: header-4
+        entry: 44444444-4444-4444-4444-444444444444
       -
-        id: nav-item-4
-        entry: history-entry-uuid
+        id: header-5
+        entry: 55555555-5555-5555-5555-555555555555
   -
-    id: nav-item-5
-    title: External Link
-    url: https://example.com
+    id: header-6
+    title: Blog
+    url: https://blog.example.com
   -
-    id: nav-item-6
-    title: Section Header
-    children:
-      -
-        id: nav-item-7
-        entry: services-entry-uuid
+    id: header-7
+    entry: 66666666-6666-6666-6666-666666666666
 ```
 
-### Node Types
+## Navigation Blueprint (Optional)
 
-**Entry Reference:**
-```yaml
--
-  id: unique-nav-id
-  entry: entry-uuid
-```
-
-**Custom Link:**
-```yaml
--
-  id: unique-nav-id
-  title: External Link
-  url: https://example.com
-```
-
-**Text (Non-link):**
-```yaml
--
-  id: unique-nav-id
-  title: Section Header
-  children:
-    -
-      id: child-nav-id
-      entry: entry-uuid
-```
-
-## Navigation Blueprint
+Only create a blueprint if the schema or user specifies custom fields for nav items.
 
 **Path:** `resources/blueprints/navigation/{handle}.yaml`
-
-Add custom fields to nav items:
 
 ```yaml
 title: Header Nav
@@ -114,27 +295,73 @@ tabs:
             field:
               type: text
               display: Icon
-              instructions: Icon class name (e.g., "fa-home")
           -
             handle: open_in_new_tab
             field:
               type: toggle
               display: Open in New Tab
               default: false
-          -
-            handle: css_class
-            field:
-              type: text
-              display: CSS Class
-          -
-            handle: highlight
-            field:
-              type: toggle
-              display: Highlight
-              instructions: Show as highlighted/featured item
 ```
 
-## Using Navigation in Templates
+## File Structure
+
+```
+content/
+├── navigation/
+│   ├── header.yaml              # Nav config
+│   └── footer.yaml
+└── trees/navigation/
+    ├── header.yaml              # Single site tree
+    └── footer.yaml
+    # OR for multisite:
+    ├── english/
+    │   ├── header.yaml
+    │   └── footer.yaml
+    └── indonesian/
+        ├── header.yaml
+        └── footer.yaml
+
+resources/blueprints/navigation/
+├── header.yaml                  # Optional custom fields
+└── footer.yaml
+```
+
+## YAML Node Reference
+
+### Entry Reference
+```yaml
+-
+  id: unique-id
+  entry: entry-uuid
+```
+
+### Custom Link
+```yaml
+-
+  id: unique-id
+  title: Link Text
+  url: https://example.com
+```
+
+### Text Only (No Link)
+```yaml
+-
+  id: unique-id
+  title: Section Header
+```
+
+### With Children
+```yaml
+-
+  id: unique-id
+  entry: parent-uuid
+  children:
+    -
+      id: child-id
+      entry: child-uuid
+```
+
+## Antlers Template Reference
 
 ### Basic Navigation
 ```antlers
@@ -193,18 +420,6 @@ tabs:
 </nav>
 ```
 
-### With Custom Fields
-```antlers
-{{ nav:header }}
-  <a href="{{ url }}"
-     class="{{ css_class }}"
-     {{ if open_in_new_tab }}target="_blank" rel="noopener"{{ /if }}>
-    {{ if icon }}<i class="{{ icon }}"></i>{{ /if }}
-    {{ title }}
-  </a>
-{{ /nav:header }}
-```
-
 ### Limit Depth
 ```antlers
 {{ nav:header depth="1" }}
@@ -212,31 +427,7 @@ tabs:
 {{ /nav:header }}
 ```
 
-### Recursive Navigation
-```antlers
-{{# Template #}}
-{{ partial:partials/nav-items :items="nav:header" }}
-
-{{# Partial: resources/views/partials/_nav-items.antlers.html #}}
-<ul>
-  {{ items }}
-    <li>
-      {{ if url }}
-        <a href="{{ url }}">{{ title }}</a>
-      {{ else }}
-        <span>{{ title }}</span>
-      {{ /if }}
-
-      {{ if children }}
-        {{ partial:partials/nav-items :items="children" }}
-      {{ /if }}
-    </li>
-  {{ /items }}
-</ul>
-```
-
-## Breadcrumbs
-
+### Breadcrumbs
 ```antlers
 <nav aria-label="Breadcrumb">
   <ol>
@@ -253,122 +444,19 @@ tabs:
 </nav>
 ```
 
-## Collection Structure as Navigation
-
-Use structured collection's tree as navigation:
-
-```antlers
-{{ nav:pages }}
-  <a href="{{ url }}" class="{{ if is_current }}active{{ /if }}">
-    {{ title }}
-  </a>
-  {{ if children }}
-    <ul>
-      {{ children }}
-        <li><a href="{{ url }}">{{ title }}</a></li>
-      {{ /children }}
-    </ul>
-  {{ /if }}
-{{ /nav:pages }}
-```
-
-**When to use:**
-- Simple sites where page hierarchy = navigation
-- Nav should match page structure exactly
-
-**When to use dedicated Navigation:**
-- Header/footer navs different from pages
-- Need external links
-- Need section headers (non-link items)
-- Multiple different menus
-
-## Common Navigation Patterns
-
-### Header Nav
-```yaml
-# content/navigation/header.yaml
-title: Header Navigation
-max_depth: 2
-collections:
-  - pages
-```
-
-### Footer Nav
-```yaml
-# content/navigation/footer.yaml
-title: Footer Navigation
-max_depth: 1
-collections:
-  - pages
-```
-
-### Sidebar Nav
-```yaml
-# content/navigation/sidebar.yaml
-title: Sidebar Navigation
-max_depth: 3
-collections:
-  - docs
-```
-
-## Multisite
-
-**Shared:** Navigation config, blueprint
-**Per-site:** Trees
-
-```yaml
-sites:
-  - english
-  - indonesian
-```
-
-**Paths:**
-- Trees: `content/trees/navigation/{site}/{handle}.yaml`
-
-## File Structure
-
-```
-content/
-├── navigation/
-│   ├── header.yaml
-│   └── footer.yaml
-└── trees/navigation/
-    ├── header.yaml       # Single site
-    └── footer.yaml
-    # OR
-    ├── english/          # Multisite
-    │   ├── header.yaml
-    │   └── footer.yaml
-    └── indonesian/
-        ├── header.yaml
-        └── footer.yaml
-
-resources/blueprints/navigation/
-├── header.yaml           # Optional
-└── footer.yaml
-```
-
-## Boundaries
-
-- Nav items reference entries by UUID
-- Each nav item needs unique `id`
-- Blueprint handle must match navigation handle
-
 ## Accuracy Checks
 
-- Tree items use `id` and `entry` (not `slug`)
-- Custom links need both `title` and `url`
-- Text-only items have `title` but no `url` or `entry`
-
-## Template Quick Reference
-
-| Task | Syntax |
-|------|--------|
-| Basic nav loop | `{{ nav:header }}...{{ /nav:header }}` |
-| Collection nav | `{{ nav:pages }}...{{ /nav:pages }}` |
-| Breadcrumbs | `{{ nav:breadcrumbs }}...{{ /nav:breadcrumbs }}` |
-| Limit depth | `{{ nav:header depth="2" }}` |
-| Check active | `{{ if is_current \|\| is_parent }}` |
-| Check children | `{{ if children }}` |
-| Loop children | `{{ children }}...{{ /children }}` |
-| Check type | `{{ if is_entry }}`, `{{ if is_link }}` |
+Before finishing, verify:
+- [ ] Nav config exists at `content/navigation/{handle}.yaml`
+- [ ] Nav tree exists at correct path (single site vs multisite)
+- [ ] Every `entry` schema item resolved to a valid UUID in the tree
+- [ ] Every `archive` schema item resolved to the mount entry UUID
+- [ ] Every `term` schema item resolved to a hardcoded URL node (`title` + `url`) using the taxonomy's route config
+- [ ] Every `link` schema item has both `title` and `url` in the tree
+- [ ] Every `text` schema item has `title` only (no `url`, no `entry`)
+- [ ] All tree nodes have unique `id` values
+- [ ] Tree nesting matches schema indentation
+- [ ] Config `collections` matches schema `collections`
+- [ ] Config `max_depth` matches schema `max_depth`
+- [ ] Multisite: one tree file per site, config has `sites` list
+- [ ] Blueprint handle matches navigation handle (if blueprint created)

@@ -34,7 +34,7 @@ Understand what the site needs. Ask the user if unclear. You need:
 - What categorization is needed (categories, tags, etc.)
 - What site-wide settings are needed (logo, contact info, social links, etc.)
 - What forms exist (contact, newsletter, etc.)
-- What navigation menus are needed (header, footer, etc.)
+- What navigation menus are needed (header, footer, etc.) → **delegate to `create-schema-navigation` skill**
 
 ### Step 3: Write Schema Files
 
@@ -247,27 +247,7 @@ message | textarea | required
 
 ### Navigation Schema
 
-```
-schema_name: {handle}
-schema_type: navigation
-title: {Display Title}
-max_depth: {number}
-collections: - {collection1} - {collection2}
-multisite: {true/false}
-sites: {- site1 - site2, only if multisite: true}
-```
-
-**Example:**
-
-```
-schema_name: header
-schema_type: navigation
-title: Header Navigation
-max_depth: 2
-collections: - pages
-multisite: true
-sites: - english - indonesian
-```
+**Navigation schemas have been moved to a separate skill.** Use the `create-schema-navigation` skill instead — it captures the full menu tree structure (items, nesting, entry/link/text types) that the downstream `create-navigations` skill needs.
 
 ### Replicator Fields
 
@@ -304,7 +284,7 @@ team_members | grid | optional | localizable
 ## Rules
 
 1. **Only write to** `schemas/*.md`. No other files.
-2. **One file per content type** — e.g., `schemas/blog_posts.md`, `schemas/categories.md`, `schemas/site_settings.md`, `schemas/contact.md`, `schemas/header.md`.
+2. **One file per content type** — e.g., `schemas/blog_posts.md`, `schemas/categories.md`, `schemas/site_settings.md`, `schemas/contact.md`. Navigation schemas use `_nav.md` suffix and are created by the `create-schema-navigation` skill.
 3. **Always detect multisite first.** If multisite, add `localizable` to all user-facing text, content, and asset fields.
 4. **Use snake_case** for all handles.
 5. **Use the exact format** shown above — key-value header, pipe-delimited fields.
