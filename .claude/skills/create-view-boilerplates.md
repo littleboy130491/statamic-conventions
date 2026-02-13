@@ -27,7 +27,7 @@ If the task requires changes outside the allowed paths, stop and inform the user
 1. **Detect multisite** — Read `resources/sites.yaml`
 2. **Scan collection configs** — Read `content/collections/*.yaml` for `template`/`layout` values
 3. **Scan mount pages** — Find mount page entries and extract their `template` values for archive views
-4. **Scan taxonomy configs** — Read `content/taxonomies/*.yaml` for `template`/`layout`/`term_template` values
+4. **Scan taxonomy configs** — Read `content/taxonomies/*.yaml` for `layout` value (`layout: {taxonomy}/layout` signals views are enabled)
 5. **Check which views are missing** — Only generate files that do not already exist
 6. **Generate boilerplate views** — Read blueprints and create `.antlers.html` files with documented field markup
 7. **Check for navigation** — If no navigation exists, ask whether to create it via `create-schema-navigation` and `create-navigations` skills
@@ -69,9 +69,9 @@ If the mount page entry has no `template` value, skip it (it uses the default pa
 For each root-level `.yaml` file in `content/taxonomies/` (not term files in subdirectories):
 
 1. Read the taxonomy config file
-2. Determine if the taxonomy has any public views — true if `layout` or `preview_targets` is present in the config
-3. Skip taxonomies with no public views (no `layout`, no `preview_targets` — all view fields are `false`)
-4. If `layout` is configured, add it to the views list
+2. Determine if the taxonomy has any public views — true if `layout` is present in the config. The convention is `layout: {taxonomy}/layout` — its presence signals that at least one view type is enabled.
+3. Skip taxonomies with no `layout` (all view fields are `false` — no public pages)
+4. Add the `layout` value to the views list
 
 ### Step 4b: Derive Taxonomy Views
 
@@ -565,7 +565,7 @@ Before finishing, verify:
 - [ ] All generated files are in `resources/views/` with `.antlers.html` extension
 - [ ] No existing view files were overwritten
 - [ ] Every `.yaml` file in `content/collections/` was scanned for `template`/`layout` values
-- [ ] Every root-level `.yaml` file in `content/taxonomies/` was scanned for `template`/`layout`/`term_template` values
+- [ ] Every root-level `.yaml` file in `content/taxonomies/` was scanned for `layout` value (presence of `layout: {taxonomy}/layout` signals views are enabled)
 - [ ] Mount page entries were scanned for `template` values (archive templates)
 - [ ] All fields from blueprints are represented in generated templates (except SEO fields)
 - [ ] Every rendered field is wrapped in an `{{ if }}` conditional

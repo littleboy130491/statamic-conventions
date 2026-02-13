@@ -39,7 +39,7 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 If a schema file exists at `schemas/{handle}.md`, read the taxonomy view fields: `has_index`, `has_show`, `has_collection_index`, `has_collection_show`. All default to `true` if not specified.
 
 - **If ALL 4 are `false`** → Omit `layout` and `preview_targets`. Terms have no public pages.
-- **If ANY are `true`** (or not specified, since default is `true`) → Include `layout` and `preview_targets`.
+- **If ANY are `true`** (or not specified, since default is `true`) → Include `layout: {handle}/layout` and `preview_targets`. The presence of `layout` in the config is the signal to other skills that this taxonomy has public views.
 
 If no schema file exists, default to all views enabled.
 

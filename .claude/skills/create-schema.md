@@ -173,8 +173,8 @@ Each field maps to one of the 4 taxonomy view types in Statamic. All default to 
 | `has_collection_index` | `{collection}/{taxonomy}/index` | `/{collection}/{taxonomy}` | Terms for one collection only |
 | `has_collection_show` | `{collection}/{taxonomy}/show` | `/{collection}/{taxonomy}/{term}` | Entries for a term (one collection only) |
 
-- **All true** (default) — Full public taxonomy with all 4 view types. Downstream skills will include `layout` and `preview_targets` in the taxonomy config and generate all view boilerplates.
-- **All false** — Terms are data-only (used for tagging/filtering but have no public pages). Downstream skills will omit `layout` and `preview_targets`.
+- **Any true** (default is all true) — Taxonomy has public views. Downstream skills will include `layout: {taxonomy}/layout` and `preview_targets` in the taxonomy config, and generate view boilerplates for each enabled view type.
+- **All false** — Terms are data-only (used for tagging/filtering but have no public pages). Downstream skills will omit `layout` and `preview_targets` from the taxonomy config.
 - `has_collection_index` and `has_collection_show` only apply when `collections` is listed. If no collections are attached, these fields are ignored.
 
 **Example (default — all views enabled, fields omitted):**

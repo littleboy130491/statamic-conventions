@@ -101,7 +101,7 @@ For each `.yaml` file in `content/collections/`:
 For each root-level `.yaml` file in `content/taxonomies/`:
 1. Read the taxonomy config
 2. Record: `title`, `layout`, `sites`
-3. Determine which views are enabled — if `layout` or `preview_targets` is present, the taxonomy has public views. Cross-reference with schema fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show` — all default to `true`)
+3. Determine which views are enabled — the presence of `layout: {taxonomy}/layout` in the config signals that views are enabled. Cross-reference with schema fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show` — all default to `true`)
 
 #### 2d. Globals
 For each `.yaml` file in `content/globals/` (root level only):

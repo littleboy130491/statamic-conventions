@@ -98,7 +98,7 @@ For each `.yaml` file in `content/taxonomies/` (only root-level config files, no
 
 1. Read the taxonomy config file
 2. Record: `title`, `layout`, `sites`, `revisions` (also record `template` and `term_template` if present, though these are typically omitted)
-3. Determine which view types are enabled — check if a schema exists at `schemas/{handle}.md` and read `has_index`, `has_show`, `has_collection_index`, `has_collection_show` (all default to `true`). If no schema exists and `layout` or `preview_targets` is present, assume all views enabled.
+3. Determine which view types are enabled — the presence of `layout: {taxonomy}/layout` in the config signals that views are enabled. Check if a schema exists at `schemas/{handle}.md` and read `has_index`, `has_show`, `has_collection_index`, `has_collection_show` (all default to `true`). If no schema exists and `layout` is present, assume all views enabled.
 4. **Check layout view file** — If `layout` is configured, check whether the view file exists in `resources/views/`. Check for both `.antlers.html` and `.blade.php` extensions.
 5. **Check taxonomy index view** — If `has_index` is enabled, check if `resources/views/{taxonomy}/index.antlers.html` or `.blade.php` exists.
 6. **Check taxonomy show view** — If `has_show` is enabled, check if `resources/views/{taxonomy}/show.antlers.html` or `.blade.php` exists.
