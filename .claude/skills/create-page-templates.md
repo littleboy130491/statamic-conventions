@@ -51,7 +51,7 @@ The base layout provides injection points via `{{ yield }}`/`{{ section }}` tags
 #### Head Hooks
 
 ```antlers
-{{-- Add custom CSS --}}
+{{# Add custom CSS #}}
 {{ section:styles }}
 <style>
     .custom-class { color: red; }
@@ -59,7 +59,7 @@ The base layout provides injection points via `{{ yield }}`/`{{ section }}` tags
 <link rel="stylesheet" href="/css/custom-page.css">
 {{ /section:styles }}
 
-{{-- Add fonts, preconnects, meta tags --}}
+{{# Add fonts, preconnects, meta tags #}}
 {{ section:head }}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -69,22 +69,22 @@ The base layout provides injection points via `{{ yield }}`/`{{ section }}` tags
 #### Body Hooks
 
 ```antlers
-{{-- Add custom body classes (on top of auto-generated contextual classes) --}}
+{{# Add custom body classes (on top of auto-generated contextual classes) #}}
 {{ section:body_class }}
 custom-page featured-content
 {{ /section:body_class }}
 
-{{-- Override default styling classes (keeps contextual classes) --}}
+{{# Override default styling classes (keeps contextual classes) #}}
 {{ section:body_style_class }}
 bg-white text-gray-900
 {{ /section:body_style_class }}
 
-{{-- Add body attributes (include leading space) --}}
+{{# Add body attributes (include leading space) #}}
 {{ section:body_attrs }}
  data-page-type="landing" data-version="2"
 {{ /section:body_attrs }}
 
-{{-- Content after <body> opens (analytics, GTM noscript) --}}
+{{# Content after <body> opens (analytics, GTM noscript) #}}
 {{ section:body_start }}
 <noscript><iframe src="..."></iframe></noscript>
 {{ /section:body_start }}
@@ -93,19 +93,19 @@ bg-white text-gray-900
 #### Content Hooks
 
 ```antlers
-{{-- Override wrapper div classes --}}
+{{# Override wrapper div classes #}}
 {{ section:wrapper_class }}
 container mx-auto px-4 max-w-7xl
 {{ /section:wrapper_class }}
 
-{{-- Header/navigation before main content --}}
+{{# Header/navigation before main content #}}
 {{ section:before_content }}
 <header>
     {{ partial:partials/navigation }}
 </header>
 {{ /section:before_content }}
 
-{{-- Footer after main content --}}
+{{# Footer after main content #}}
 {{ section:after_content }}
 <footer>
     {{ partial:partials/footer }}
@@ -116,7 +116,7 @@ container mx-auto px-4 max-w-7xl
 #### Script Hooks
 
 ```antlers
-{{-- Custom JavaScript (combine all scripts in one section) --}}
+{{# Custom JavaScript (combine all scripts in one section) #}}
 {{ section:scripts }}
 <script src="/js/analytics.js"></script>
 <script src="/js/modal.js"></script>
@@ -127,7 +127,7 @@ container mx-auto px-4 max-w-7xl
 </script>
 {{ /section:scripts }}
 
-{{-- Content before </body> --}}
+{{# Content before </body> #}}
 {{ section:body_end }}
 <!-- Final tracking scripts -->
 {{ /section:body_end }}
@@ -167,7 +167,7 @@ archive archive-blog
 
 **Basic partial:**
 ```antlers
-{{-- resources/views/partials/_card.antlers.html --}}
+{{# resources/views/partials/_card.antlers.html #}}
 <div class="card">
   {{ if image }}<img src="{{ image:url }}" alt="{{ title }}">{{ /if }}
   {{ if title }}<h3>{{ title }}</h3>{{ /if }}
@@ -179,10 +179,10 @@ archive archive-blog
 ```antlers
 {{ partial:partials/card }}
 
-{{-- With parameters --}}
+{{# With parameters #}}
 {{ partial:partials/card :title="post_title" :image="featured_image" }}
 
-{{-- Inside loop --}}
+{{# Inside loop #}}
 {{ collection:posts }}
   {{ partial:partials/card }}
 {{ /collection:posts }}
@@ -190,14 +190,14 @@ archive archive-blog
 
 **Partial with slots:**
 ```antlers
-{{-- resources/views/partials/_section.antlers.html --}}
+{{# resources/views/partials/_section.antlers.html #}}
 <section class="section {{ class }}">
   <div class="container">
     {{ slot }}
   </div>
 </section>
 
-{{-- Usage --}}
+{{# Usage #}}
 {{ partial:partials/section class="bg-gray" }}
   <h2>Section Title</h2>
   <p>Content here</p>
@@ -221,7 +221,7 @@ For pages using replicator-based page builders:
 
 **Example set partial:**
 ```antlers
-{{-- resources/views/sets/_hero.antlers.html --}}
+{{# resources/views/sets/_hero.antlers.html #}}
 {{ if heading || lead || image }}
   <section class="hero">
     {{ if image }}
@@ -254,24 +254,24 @@ The base layout includes `{{ seo_pro:meta }}` which auto-generates meta tags, OG
 ## Complete Template Example
 
 ```antlers
-{{-- resources/views/pages/about.antlers.html --}}
+{{# resources/views/pages/about.antlers.html #}}
 
-{{-- Add custom body classes --}}
+{{# Add custom body classes #}}
 {{ section:body_class }}
 about-page
 {{ /section:body_class }}
 
-{{-- Override wrapper --}}
+{{# Override wrapper #}}
 {{ section:wrapper_class }}
 container mx-auto px-4 py-8 max-w-6xl
 {{ /section:wrapper_class }}
 
-{{-- Header --}}
+{{# Header #}}
 {{ section:before_content }}
 {{ partial:partials/header }}
 {{ /section:before_content }}
 
-{{-- Main content --}}
+{{# Main content #}}
 {{ if title || subtitle || hero_image }}
   <section class="hero">
     {{ if hero_image }}
@@ -288,12 +288,12 @@ container mx-auto px-4 py-8 max-w-6xl
   </section>
 {{ /if }}
 
-{{-- Footer --}}
+{{# Footer #}}
 {{ section:after_content }}
 {{ partial:partials/footer }}
 {{ /section:after_content }}
 
-{{-- Page-specific scripts --}}
+{{# Page-specific scripts #}}
 {{ section:scripts }}
 <script src="/js/about-animations.js"></script>
 {{ /section:scripts }}

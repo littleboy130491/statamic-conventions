@@ -108,14 +108,14 @@ For each missing template file, create `resources/views/{value}.antlers.html` wi
 
 **Part 1: Field documentation comment block** — An Antlers comment listing all available fields:
 ```antlers
-{{--
+{{#
   Template: {collection}/{template}
   Blueprint fields:
 
   {handle} ({type}) — {brief description or notable properties}
   {handle} ({type}) — {brief description or notable properties}
   ...
---}}
+#}}
 ```
 
 **Part 2: Functional HTML boilerplate** — Markup with all fields rendered using the appropriate pattern from the Field Type Mapping Reference (see below):
@@ -132,7 +132,7 @@ For each missing template file, create `resources/views/{value}.antlers.html` wi
 ```antlers
 {{ if title }}<h1>{{ title }}</h1>{{ /if }}
 
-{{-- Page content fields from the mount page blueprint --}}
+{{# Page content fields from the mount page blueprint #}}
 
 {{ collection:{handle} limit="10" }}
   <article>
@@ -148,10 +148,10 @@ For each missing template file, create `resources/views/{value}.antlers.html` wi
 For each missing layout file, create a minimal `resources/views/{value}.antlers.html`:
 
 ```antlers
-{{--
+{{#
   Layout: {value}
   Extends the base layout with collection/taxonomy-specific structure.
---}}
+#}}
 
 {{ section:before_content }}
 {{ partial:partials/header }}
@@ -206,10 +206,10 @@ Use these patterns when generating template boilerplate. Every field MUST be wra
 {{ if handle }}
   {{ handle }}
     {{ if type == "set_name" }}
-      {{-- Render set_name fields --}}
+      {{# Render set_name fields #}}
     {{ /if }}
     {{ if type == "another_set" }}
-      {{-- Render another_set fields --}}
+      {{# Render another_set fields #}}
     {{ /if }}
   {{ /handle }}
 {{ /if }}
@@ -219,12 +219,12 @@ Use these patterns when generating template boilerplate. Every field MUST be wra
 ```antlers
 {{ if handle }}
   {{ handle }}
-    {{-- Render column fields --}}
+    {{# Render column fields #}}
   {{ /handle }}
 {{ /if }}
 ```
 
-**Unknown field types:** Use `{{ if handle }}{{ handle }}{{ /if }}` with an Antlers comment noting the type: `{{-- {handle}: unknown type "{type}" --}}`.
+**Unknown field types:** Use `{{ if handle }}{{ handle }}{{ /if }}` with an Antlers comment noting the type: `{{# {handle}: unknown type "{type}" #}}`.
 
 ## Special Cases
 
@@ -239,7 +239,7 @@ Use these patterns when generating template boilerplate. Every field MUST be wra
 A generated template for `resources/views/posts/show.antlers.html` based on a blueprint with title, featured_image, content (bard), author (users), and categories (terms):
 
 ```antlers
-{{--
+{{#
   Template: posts/show
   Blueprint fields:
 
@@ -248,7 +248,7 @@ A generated template for `resources/views/posts/show.antlers.html` based on a bl
   content (bard) — Rich text content
   author (users) — Post author
   categories (terms) — taxonomies: categories
---}}
+#}}
 
 {{ if title }}<h1>{{ title }}</h1>{{ /if }}
 
@@ -278,7 +278,7 @@ A generated template for `resources/views/posts/show.antlers.html` based on a bl
 A generated archive template for `resources/views/posts/index.antlers.html` where the posts collection is mounted to a page:
 
 ```antlers
-{{--
+{{#
   Template: posts/index (archive)
   Mount page blueprint fields:
 
@@ -286,7 +286,7 @@ A generated archive template for `resources/views/posts/index.antlers.html` wher
   content (bard) — Page introduction content
 
   Collection listing: posts
---}}
+#}}
 
 {{ if title }}<h1>{{ title }}</h1>{{ /if }}
 
@@ -311,11 +311,11 @@ A generated archive template for `resources/views/posts/index.antlers.html` wher
 A generated layout for `resources/views/posts/layout.antlers.html`:
 
 ```antlers
-{{--
+{{#
   Layout: posts/layout
   Extends the base layout with posts-specific structure.
   Field rendering belongs in the template, not here.
---}}
+#}}
 
 {{ section:before_content }}
 {{ partial:partials/header }}

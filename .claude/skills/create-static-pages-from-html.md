@@ -117,11 +117,11 @@ cta_button_link: /contact
 **NEVER output bare variables. Always wrap with `{{ if }}`:**
 
 ```antlers
-{{-- WRONG --}}
+{{# WRONG #}}
 <h1>{{ title }}</h1>
 <p>{{ subtitle }}</p>
 
-{{-- CORRECT --}}
+{{# CORRECT #}}
 {{ if title }}<h1>{{ title }}</h1>{{ /if }}
 {{ if subtitle }}<p>{{ subtitle }}</p>{{ /if }}
 ```
@@ -142,7 +142,7 @@ cta_button_link: /contact
   <img src="{{ hero_image:url }}" alt="{{ hero_image:alt ?? title }}">
 {{ /if }}
 
-{{-- Gallery --}}
+{{# Gallery #}}
 {{ if gallery }}
   {{ gallery }}
     <img src="{{ url }}" alt="{{ alt }}">
@@ -216,7 +216,7 @@ cta_button_link: /contact
 
 ### Section Conditional
 ```antlers
-{{-- Only show section if has content --}}
+{{# Only show section if has content #}}
 {{ if cta_heading || cta_button_text }}
   <section class="cta">
     {{ if cta_heading }}<h2>{{ cta_heading }}</h2>{{ /if }}
@@ -232,9 +232,9 @@ cta_button_link: /contact
 ## Complete Template Example
 
 ```antlers
-{{-- resources/views/pages/about.antlers.html --}}
+{{# resources/views/pages/about.antlers.html #}}
 
-{{-- Hero Section --}}
+{{# Hero Section #}}
 {{ if title || subtitle || hero_image }}
   <section class="hero">
     {{ if hero_image }}
@@ -249,7 +249,7 @@ cta_button_link: /contact
   </section>
 {{ /if }}
 
-{{-- Intro Section --}}
+{{# Intro Section #}}
 {{ if intro }}
   <section class="intro">
     <div class="prose">
@@ -258,7 +258,7 @@ cta_button_link: /contact
   </section>
 {{ /if }}
 
-{{-- Features Section --}}
+{{# Features Section #}}
 {{ if features }}
   <section class="features">
     <div class="features-grid">
@@ -279,7 +279,7 @@ cta_button_link: /contact
   </section>
 {{ /if }}
 
-{{-- CTA Section --}}
+{{# CTA Section #}}
 {{ if cta_heading || cta_button_text }}
   <section class="cta">
     <div class="cta-content">
