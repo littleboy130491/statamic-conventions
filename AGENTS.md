@@ -33,11 +33,11 @@ This document is a routing guide for which skills to use and when. Each skill fi
 | Skill | When to Use |
 |-------|-------------|
 | `create-collections` | Create collection configs from schemas (`content/collections/*.yaml`). |
-| `create-taxonomies` | Create taxonomy configs from schemas (`content/taxonomies/*.yaml`). |
+| `create-taxonomies` | Create taxonomy configs from schemas (`content/taxonomies/*.yaml`). Does NOT set `template` or `term_template` — Statamic auto-resolves views by naming convention. |
 | `create-blueprints` | Create/update blueprint YAML files for collections, taxonomies, globals, forms, navigations (`resources/blueprints/`). |
 | `create-fieldsets` | Create reusable fieldsets (`resources/fieldsets/*.yaml`). |
 | `mount-collections` | Create mount page entries and add `mount` to collection configs. Only for collections with `has_archive: true`. |
-| `attach-taxonomies` | Attach taxonomies to collections (adds `taxonomies` to collection config, `term_template` to taxonomy config). |
+| `attach-taxonomies` | Attach taxonomies to collections (adds `taxonomies` to collection config). Informs about collection-scoped taxonomy views that auto-activate. |
 | `create-globals` | Create global set configs and data files (`content/globals/`). |
 | `create-forms` | Create form configs, blueprints, and email templates (`resources/forms/`). |
 | `create-navigations` | Create navigation configs and trees from `schemas/*_nav.md` (`content/navigation/`, `content/trees/`). Resolves entry UUIDs, archive mounts, and taxonomy term URLs. |
@@ -55,7 +55,7 @@ This document is a routing guide for which skills to use and when. Each skill fi
 
 | Skill | When to Use |
 |-------|-------------|
-| `create-view-boilerplates` | Generate `.antlers.html` templates and layouts for collections/taxonomies based on their blueprints. Only creates missing views, never overwrites. |
+| `create-view-boilerplates` | Generate `.antlers.html` templates and layouts for collections/taxonomies based on their blueprints. Generates all 4 taxonomy view types: `{taxonomy}/index`, `{taxonomy}/show`, `{collection}/{taxonomy}/index`, `{collection}/{taxonomy}/show`. Only creates missing views, never overwrites. |
 | `create-page-templates` | Work with the base layout and page-level templates (`resources/views/`). |
 | `create-static-pages` | Create static pages with Antlers templates. |
 | `create-static-pages-from-html` | Convert existing HTML files into Statamic page templates. |
