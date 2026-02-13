@@ -9,7 +9,7 @@ Create or update Statamic taxonomy configuration with proper multisite support.
 Do NOT create, edit, or modify any other files — including but not limited to:
 - Collection config files (`content/collections/`) — use `attach-taxonomies` skill to link taxonomies to collections
 - Blueprint files (`resources/blueprints/`) — use `create-blueprints` skill instead
-- Term/content files (`content/taxonomies/{taxonomy}/`) — use `create-entries` skill instead
+- Term/content files (`content/taxonomies/{taxonomy}/`) — use `create-terms` skill instead
 - Entry files (`content/collections/{collection}/`) — use `create-entries` skill instead
 - View/template files (`resources/views/`)
 - Config files (`config/`)

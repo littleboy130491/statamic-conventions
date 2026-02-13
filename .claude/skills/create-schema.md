@@ -142,12 +142,13 @@ featured_posts | entries | optional | | collections: blog_posts, max_items: 3
 
 ### Taxonomy Schema
 
+Taxonomies do NOT have routes — Statamic handles taxonomy routing automatically. Term URLs are defined by the taxonomy's own route (`/{taxonomy-slug}/{term-slug}`) and by each collection's route configuration for collection-scoped term pages.
+
 ```
 schema_name: {handle}
 schema_type: taxonomy
 title: {Display Title}
 has_single: {true/false}
-route: /{handle}/{slug} (omit if has_single: false)
 collections: - {collection1} - {collection2}
 multisite: {true/false}
 sites: {- site1 - site2, only if multisite: true}
@@ -158,10 +159,10 @@ title | text | required | localizable
 {additional fields if any}
 ```
 
-**`has_single` for taxonomies:**
+**`has_single` explained:**
 
-- **`has_single: true`** — Each term has its own page listing entries with that term (e.g., `/categories/news/`). The taxonomy MUST have a `route`. Downstream skills will create term templates.
-- **`has_single: false`** — Terms are data-only, used for organizing/filtering in the control panel but have no public pages. Omit `route`. Downstream skills will NOT create term templates.
+- **`has_single: true`** (default) — Terms have their own public pages. Downstream skills will create `template`, `layout`, and `preview_targets` in the taxonomy config, and generate view boilerplates for term pages.
+- **`has_single: false`** — Terms are data-only (used for tagging/filtering but have no public term pages). Downstream skills will omit `template`, `layout`, and `preview_targets`.
 
 **Example:**
 
@@ -170,7 +171,6 @@ schema_name: categories
 schema_type: taxonomy
 title: Categories
 has_single: true
-route: /categories/{slug}
 collections: - blog_posts - projects
 multisite: true
 sites: - english - indonesian
@@ -290,12 +290,12 @@ team_members | grid | optional | localizable
 5. **Use the exact format** shown above — key-value header, pipe-delimited fields.
 6. **Omit keys that don't apply** — e.g., don't include `mount:` if there's no mount, don't include `localizable` column if single site, don't include `collection_relationship` if no entries fields reference other collections.
 7. **If a collection has `entries` fields referencing other collections**, list those collection handles in `collection_relationship`. This signals downstream skills to create those collections if they don't already exist.
-8. **Every collection MUST have `has_single` and `has_archive`. Every taxonomy MUST have `has_single`.**
+8. **Every collection MUST have `has_single` and `has_archive`.**
    - Collection `has_single: false` → omit `route`. Downstream skills will NOT create templates or layouts for this collection.
    - Collection `has_archive: false` → omit `mount`. Do NOT ask the user whether they want to mount the collection.
-   - Taxonomy `has_single: false` → omit `route`. Downstream skills will NOT create term templates.
-9. **If requirements are unclear**, ask the user before writing. Do not guess.
-10. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
+9. **Taxonomies do NOT have `route`.** Statamic handles taxonomy routing automatically. Taxonomies DO have `has_single` to control whether terms have public pages.
+10. **If requirements are unclear**, ask the user before writing. Do not guess.
+11. **After writing all schema files**, tell the user the list of files created and which downstream skills to run.
 
 ## Accuracy Checks
 
@@ -303,10 +303,11 @@ Before finishing, verify:
 - [ ] All schema files are in `schemas/`
 - [ ] Each file has `schema_name` and `schema_type`
 - [ ] Each collection schema has `has_single` and `has_archive`
-- [ ] Each taxonomy schema has `has_single`
 - [ ] Collections with `has_single: false` do NOT have `route`
-- [ ] Taxonomies with `has_single: false` do NOT have `route`
 - [ ] Collections with `has_archive: false` do NOT have `mount`
+- [ ] Taxonomy schemas do NOT have `route`
+- [ ] Taxonomy schemas with `has_single: true` signal downstream skills to create template/layout/preview_targets
+- [ ] Every taxonomy schema has `has_single`
 - [ ] Each collection schema has at least one blueprint with fields
 - [ ] Multisite schemas have `localizable` on appropriate fields
 - [ ] Collections with `entries` fields referencing other collections have matching `collection_relationship` list

@@ -144,6 +144,32 @@ For each missing template file, create `resources/views/{value}.antlers.html` wi
 {{ /collection:{handle} }}
 ```
 
+**For taxonomy term templates** (`{taxonomy}/show`), generate:
+- The term's own blueprint fields (title, description, etc.) rendered normally
+- An `{{ entries }}` listing block that shows all entries tagged with this term
+
+```antlers
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{# Term blueprint fields #}}
+
+{{ entries paginate="10" }}
+  {{ results }}
+    <article>
+      <h2><a href="{{ url }}">{{ title }}</a></h2>
+      {{ if date }}<time>{{ date format="F j, Y" }}</time>{{ /if }}
+    </article>
+  {{ /results }}
+
+  {{ if total_pages > 1 }}
+    <nav>
+      {{ if prev_page }}<a href="{{ prev_page }}">Previous</a>{{ /if }}
+      {{ if next_page }}<a href="{{ next_page }}">Next</a>{{ /if }}
+    </nav>
+  {{ /if }}
+{{ /entries }}
+```
+
 ### Step 8: Generate Layout Boilerplates
 
 For each missing layout file, create a minimal `resources/views/{value}.antlers.html`:
@@ -240,7 +266,7 @@ Use these patterns when generating template boilerplate. Every field MUST be wra
 
 - **Multiple blueprints per collection** — Generate fields from ALL blueprints (union of fields, deduplicated by handle). Add a comment noting which blueprint each field comes from if there are multiple.
 - **Fieldset imports** — Resolve `import: {handle}` (and `import: {handle}` with `prefix: {prefix}`) by reading `resources/fieldsets/{handle}.yaml`. Include imported fields in the template with their prefixed handles if a prefix is specified.
-- **`term_template`** — Check existence but note that `term_template` typically points to the same template used by the taxonomy's main `template` value. Generate a boilerplate if missing.
+- **`term_template`** — This is the template used when viewing entries filtered by a term from a collection context. Check existence and generate a boilerplate if missing. The `term_template` value typically points to a collection's show template (e.g., `products/show`).
 - **Mount page archive templates** — Read the mount page entry to get its `template` value. Generate an archive boilerplate that includes the page's own blueprint fields PLUS a `{{ collection:{mounted-collection-handle} }}` listing block. Resolve mount UUID by scanning page entries for matching `id`.
 - **Subdirectories** — Create subdirectories under `resources/views/` as needed (e.g., `resources/views/posts/` for `posts/show`).
 
@@ -316,6 +342,44 @@ A generated archive template for `resources/views/posts/index.antlers.html` wher
 {{ /collection:posts }}
 ```
 
+## Taxonomy Term Template Example
+
+A generated taxonomy term template for `resources/views/categories/show.antlers.html` based on a blueprint with title and description:
+
+```antlers
+{{#
+  Template: categories/show
+  Blueprint fields:
+
+  title (text) — Term title
+  description (textarea) — Term description
+
+  Entries: lists all entries tagged with this term
+#}}
+
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{ if description }}
+  <div>{{ description | nl2br }}</div>
+{{ /if }}
+
+{{ entries paginate="10" }}
+  {{ results }}
+    <article>
+      <h2><a href="{{ url }}">{{ title }}</a></h2>
+      {{ if date }}<time>{{ date format="F j, Y" }}</time>{{ /if }}
+    </article>
+  {{ /results }}
+
+  {{ if total_pages > 1 }}
+    <nav>
+      {{ if prev_page }}<a href="{{ prev_page }}">Previous</a>{{ /if }}
+      {{ if next_page }}<a href="{{ next_page }}">Next</a>{{ /if }}
+    </nav>
+  {{ /if }}
+{{ /entries }}
+```
+
 ## Layout Example
 
 A generated layout for `resources/views/posts/layout.antlers.html`:
@@ -352,8 +416,9 @@ A generated layout for `resources/views/posts/layout.antlers.html`:
 10. **Generate from all blueprints.** When a collection or taxonomy has multiple blueprints, include fields from all of them (deduplicated by handle).
 11. **Do not modify collection configs, taxonomy configs, blueprints, entries, or any file outside `resources/views/`.** If changes are needed outside the allowed path, inform the user.
 12. **Archive templates must include a listing tag.** Mount page templates must include a `{{ collection:{handle} }}` block for the mounted collection.
-13. **Always detect multisite in Step 1** before scanning for mount page entries, as page entry directories differ between single-site and multisite projects.
-14. **Use the Field Type Mapping Reference** for all field type rendering. For unknown types, fall back to `{{ if handle }}{{ handle }}{{ /if }}` with a comment.
+13. **Taxonomy term templates must include an `{{ entries }}` listing block.** Term show templates must include an `{{ entries paginate="10" }}` block to list entries tagged with the term, with pagination support.
+14. **Always detect multisite in Step 1** before scanning for mount page entries, as page entry directories differ between single-site and multisite projects.
+15. **Use the Field Type Mapping Reference** for all field type rendering. For unknown types, fall back to `{{ if handle }}{{ handle }}{{ /if }}` with a comment.
 
 ## Accuracy Checks
 
@@ -368,6 +433,7 @@ Before finishing, verify:
 - [ ] Fieldset imports are resolved and their fields included in templates
 - [ ] Replicator sets are rendered inline with type-checking blocks
 - [ ] Archive templates include a `{{ collection:{handle} }}` listing block
+- [ ] Taxonomy term templates include an `{{ entries paginate="10" }}` listing block with pagination
 - [ ] Layout boilerplates contain structural hooks only, no field rendering
 - [ ] The base `resources/views/layout.antlers.html` was not modified
 - [ ] No collection configs, taxonomy configs, blueprints, entries, or other out-of-scope files were created or edited
