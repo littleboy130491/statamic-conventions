@@ -47,29 +47,26 @@ If no schema file exists, default both to `true`.
 
 **Path:** `content/collections/{handle}.yaml` — this is the only file you create in this step.
 
-**Always include these fields:**
+Use the appropriate template below. Copy it exactly, then replace `{handle}` with the actual collection handle and `{Title}` with the display name. Do NOT skip any fields.
 
-| Field | Value |
-|-------|-------|
-| `title` | Collection display name in plural form (e.g., "Blog Posts") |
-| `icon` | `collections` |
-| `revisions` | `true` |
-| `date` | `true` |
-| `sort_by` | `date` |
-| `sort_dir` | `desc` |
-| `date_behavior` | See hardcoded block below |
-| `structure` | See hardcoded block below. Set `max_depth` based on collection type |
+#### Template A: Multisite + has_single: true (default)
 
-**Add only if `has_single: true` (or not specified):**
-
-| Field | Value |
-|-------|-------|
-| `template` | `{handle}/show` — replace `{handle}` with the collection handle |
-| `layout` | `{handle}/layout` — replace `{handle}` with the collection handle |
-| `route` | `/{handle}/{slug}` — replace `{handle}` with the collection handle |
-| `preview_targets` | See hardcoded block below |
+Use when multisite is detected AND `has_single` is `true` or not specified.
 
 ```yaml
+title: '{Title}'
+icon: collections
+sites:
+  - {site_key_1}
+  - {site_key_2}
+propagate: true
+template: '{handle}/show'
+layout: '{handle}/layout'
+route: '/{handle}/{slug}'
+revisions: true
+date: true
+sort_by: date
+sort_dir: desc
 date_behavior:
   past: public
   future: private
@@ -84,22 +81,83 @@ structure:
   slugs: true
 ```
 
-`max_depth` guide:
-- `1` — Flat collections (e.g., blog posts, news). Enables drag-and-drop ordering without nesting
-- `3` or more — Hierarchical collections (e.g., pages). Enables nested parent-child structure
+#### Template B: Single site + has_single: true (default)
 
-**Add if multisite** (multiple sites detected in Step 1 — regardless of `has_single`):
+Use when only one site is detected AND `has_single` is `true` or not specified.
 
-| Field | Value |
-|-------|-------|
-| `sites` | List all site keys from `resources/sites.yaml` |
-| `propagate` | `true` |
+```yaml
+title: '{Title}'
+icon: collections
+template: '{handle}/show'
+layout: '{handle}/layout'
+route: '/{handle}/{slug}'
+revisions: true
+date: true
+sort_by: date
+sort_dir: desc
+date_behavior:
+  past: public
+  future: private
+preview_targets:
+  -
+    label: Entry
+    url: '{permalink}'
+    refresh: true
+structure:
+  root: false
+  max_depth: 1
+  slugs: true
+```
 
-**Add if taxonomy relationships exist:**
+#### Template C: Multisite + has_single: false
 
-You may include a `taxonomies` list in the collection config you are creating (e.g., `categories`, `tags`).
+Use when multisite is detected AND `has_single: false`. Omits `route`, `template`, `layout`, `preview_targets`.
 
-Before adding a taxonomy handle to the list, check if that taxonomy already exists at `content/taxonomies/{handle}.yaml` (read only). If it does not exist, ask the user whether they want to create it. If yes, use the `create-taxonomies` skill — do not create taxonomy files from this skill. To attach the taxonomy to an existing collection, use the `attach-taxonomies` skill.
+```yaml
+title: '{Title}'
+icon: collections
+sites:
+  - {site_key_1}
+  - {site_key_2}
+propagate: true
+revisions: true
+date: true
+sort_by: date
+sort_dir: desc
+date_behavior:
+  past: public
+  future: private
+structure:
+  root: false
+  max_depth: 1
+  slugs: true
+```
+
+#### Template D: Single site + has_single: false
+
+Use when only one site is detected AND `has_single: false`. Omits `route`, `template`, `layout`, `preview_targets`.
+
+```yaml
+title: '{Title}'
+icon: collections
+revisions: true
+date: true
+sort_by: date
+sort_dir: desc
+date_behavior:
+  past: public
+  future: private
+structure:
+  root: false
+  max_depth: 1
+  slugs: true
+```
+
+#### Template notes
+
+- Replace `{site_key_1}`, `{site_key_2}`, etc. with actual site keys from `resources/sites.yaml`
+- `max_depth`: Use `1` for flat collections (blog, news). Use `3` or more for hierarchical collections (pages)
+- **Taxonomies:** You may append a `taxonomies` list (e.g., `taxonomies:\n  - categories\n  - tags`). Before adding a taxonomy handle, check if it exists at `content/taxonomies/{handle}.yaml` (read only). If it does not exist, ask the user whether to create it using the `create-taxonomies` skill
 
 ## Rules
 
@@ -112,7 +170,7 @@ Before adding a taxonomy handle to the list, check if that taxonomy already exis
 7. You may read any project file to inform your work, but do not modify files outside the allowed path.
 8. Output valid YAML only.
 9. Always detect multisite in Step 1 before writing the collection config. If multisite is enabled, you MUST include `sites` and `propagate` fields.
-10. Always include all required fields from the "Always include" table in Step 3.
+10. Always use the complete YAML template from Step 3. Do NOT skip any fields.
 11. **If `has_single: false`** — do NOT include `route`, `template`, `layout`, or `preview_targets`.
 12. **If `has_archive: false`** — do NOT mount. Do not suggest or ask about mounting.
 
@@ -121,7 +179,7 @@ Before adding a taxonomy handle to the list, check if that taxonomy already exis
 Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path is `content/collections/{handle}.yaml`
-- [ ] All required fields from the Step 3 "Always include" table are present
+- [ ] All fields from the matching Step 3 template are present (no fields skipped)
 - [ ] If `has_single: true` (or not specified): `route`, `template`, `layout`, and `preview_targets` are present
 - [ ] If `has_single: false`: `route`, `template`, `layout`, and `preview_targets` are NOT present
 - [ ] `date_behavior` and `structure` blocks are included exactly as specified

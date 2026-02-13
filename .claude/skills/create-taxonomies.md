@@ -38,7 +38,7 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 
 If a schema file exists at `schemas/{handle}.md`, read it to determine the `has_single` value. This controls which fields to include:
 
-- **`has_single: false`** → Omit `route`, `template`, `layout`, and `preview_targets`. Terms have no public pages.
+- **`has_single: false`** → Omit `template`, `layout`, and `preview_targets`. Terms have no public pages.
 
 If no schema file exists, default to `has_single: true`.
 
@@ -46,23 +46,20 @@ If no schema file exists, default to `has_single: true`.
 
 **Path:** `content/taxonomies/{handle}.yaml` — this is the only file you create in this step.
 
-**Always include these fields:**
+Use the appropriate template below. Copy it exactly, then replace `{handle}` with the actual taxonomy handle and `{Title}` with the display name. Do NOT skip any fields.
 
-| Field | Value |
-|-------|-------|
-| `title` | Taxonomy display name in plural form (e.g., "Categories", "Tags") |
-| `revisions` | `true` |
+#### Template A: Multisite + has_single: true (default)
 
-**Add only if `has_single: true` (or not specified):**
-
-| Field | Value |
-|-------|-------|
-| `template` | `{handle}/show` — replace `{handle}` with the taxonomy handle |
-| `layout` | `{handle}/layout` — replace `{handle}` with the taxonomy handle |
-| `route` | `/{handle}/{slug}` — replace `{handle}` with the taxonomy handle |
-| `preview_targets` | See hardcoded block below |
+Use when multisite is detected AND `has_single` is `true` or not specified.
 
 ```yaml
+title: '{Title}'
+sites:
+  - {site_key_1}
+  - {site_key_2}
+template: '{handle}/show'
+layout: '{handle}/layout'
+revisions: true
 preview_targets:
   -
     label: Entry
@@ -70,11 +67,47 @@ preview_targets:
     refresh: true
 ```
 
-**Add if multisite** (multiple sites detected in Step 1 — regardless of `has_single`):
+#### Template B: Single site + has_single: true (default)
 
-| Field | Value |
-|-------|-------|
-| `sites` | List all site keys from `resources/sites.yaml` |
+Use when only one site is detected AND `has_single` is `true` or not specified.
+
+```yaml
+title: '{Title}'
+template: '{handle}/show'
+layout: '{handle}/layout'
+revisions: true
+preview_targets:
+  -
+    label: Entry
+    url: '{permalink}'
+    refresh: true
+```
+
+#### Template C: Multisite + has_single: false
+
+Use when multisite is detected AND `has_single: false`. Omits `template`, `layout`, `preview_targets`.
+
+```yaml
+title: '{Title}'
+sites:
+  - {site_key_1}
+  - {site_key_2}
+revisions: true
+```
+
+#### Template D: Single site + has_single: false
+
+Use when only one site is detected AND `has_single: false`. Omits `template`, `layout`, `preview_targets`.
+
+```yaml
+title: '{Title}'
+revisions: true
+```
+
+#### Template notes
+
+- Replace `{site_key_1}`, `{site_key_2}`, etc. with actual site keys from `resources/sites.yaml`
+- Taxonomies do NOT use a `route` field — Statamic handles taxonomy term routing automatically
 
 ## Rules
 
@@ -86,16 +119,18 @@ preview_targets:
 6. You may read any project file to inform your work, but do not modify files outside the allowed path.
 7. Output valid YAML only.
 8. Always detect multisite in Step 1 before writing the taxonomy config. If multisite is enabled, you MUST include the `sites` field.
-9. Always include all required fields from the "Always include" table in Step 3.
-10. **If `has_single: false`** — do NOT include `route`, `template`, `layout`, or `preview_targets`.
+9. Always use the complete YAML template from Step 3. Do NOT skip any fields.
+10. **If `has_single: false`** — do NOT include `template`, `layout`, or `preview_targets`.
+11. **Never include a `route` field** — Statamic handles taxonomy routing automatically.
 
 ## Accuracy Checks
 
 Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path is `content/taxonomies/{handle}.yaml`
-- [ ] All required fields from the Step 3 "Always include" table are present
-- [ ] If `has_single: true` (or not specified): `route`, `template`, `layout`, and `preview_targets` are present
-- [ ] If `has_single: false`: `route`, `template`, `layout`, and `preview_targets` are NOT present
+- [ ] All fields from the matching Step 3 template are present (no fields skipped)
+- [ ] If `has_single: true` (or not specified): `template`, `layout`, and `preview_targets` are present
+- [ ] If `has_single: false`: `template`, `layout`, and `preview_targets` are NOT present
+- [ ] No `route` field is present (taxonomies never use `route`)
 - [ ] If multisite is enabled: `sites` lists all site keys
 - [ ] No collection configs, blueprints, entries, templates, or other out-of-scope files were created or edited
