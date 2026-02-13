@@ -30,6 +30,7 @@ If the task requires changes outside the allowed paths, stop and inform the user
 4. **Scan taxonomy configs** — Read `content/taxonomies/*.yaml` for `template`/`layout`/`term_template` values
 5. **Check which views are missing** — Only generate files that do not already exist
 6. **Generate boilerplate views** — Read blueprints and create `.antlers.html` files with documented field markup
+7. **Check for navigation** — If no navigation exists, ask whether to create it via `create-schema-navigation` and `create-navigations` skills
 
 ## Workflow
 
@@ -151,20 +152,21 @@ For each missing layout file, create a minimal `resources/views/{value}.antlers.
 {{#
   Layout: {value}
   Extends the base layout with collection/taxonomy-specific structure.
+  Field rendering belongs in the template, not here.
 #}}
+
+{{ partial:layout }}
 
 {{ section:before_content }}
 {{ partial:partials/header }}
 {{ /section:before_content }}
-
-{{ template_content }}
 
 {{ section:after_content }}
 {{ partial:partials/footer }}
 {{ /section:after_content }}
 ```
 
-Layouts contain structural hooks only — no field rendering. Field rendering belongs in the template.
+Layouts extend the base layout via `{{ partial:layout }}`. Sections inject content into the base layout's yield points. No `{{ template_content }}` is needed here — that lives in the base layout. Field rendering belongs in the template, not the layout.
 
 ### Step 9: Report Results
 
@@ -173,6 +175,14 @@ After generating all files, output a summary:
 1. **Created files** — List each file path that was generated
 2. **Skipped files** — List each file path that already existed (with which extension: `.antlers.html` or `.blade.php`)
 3. **Collections/taxonomies with no template config** — List any that were skipped because they had no `template`/`layout` values
+
+### Step 10: Check for Navigation
+
+After reporting results, check whether any navigation exists in the project:
+
+1. Check if `content/navigation/` directory exists and contains any `.yaml` files
+2. If **no navigation exists**, ask the user whether they would like to create navigation — suggest using the `create-schema-navigation` skill (to define the navigation schema/config) and `create-navigations` skill (to create the navigation tree content)
+3. If navigation already exists, skip this step silently
 
 ## Field Type → Antlers Mapping Reference
 
@@ -317,11 +327,11 @@ A generated layout for `resources/views/posts/layout.antlers.html`:
   Field rendering belongs in the template, not here.
 #}}
 
+{{ partial:layout }}
+
 {{ section:before_content }}
 {{ partial:partials/header }}
 {{ /section:before_content }}
-
-{{ template_content }}
 
 {{ section:after_content }}
 {{ partial:partials/footer }}
