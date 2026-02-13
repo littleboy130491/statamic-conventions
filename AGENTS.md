@@ -25,7 +25,8 @@ This document is a routing guide for which skills to use and when. Each skill fi
 
 | Skill | When to Use |
 |-------|-------------|
-| `create-schema` | First step for new builds. User describes what they need → generates `schemas/*.md` files that drive all downstream skills. |
+| `create-schema` | First step for new builds. User describes what they need → generates `schemas/*.md` files for collections, taxonomies, globals, forms. Delegates navigation to `create-schema-navigation`. |
+| `create-schema-navigation` | Create navigation schemas (`schemas/*_nav.md`) with full menu tree structure — supports entry, archive, term, link, and text item types. Run after `create-schema` when navigations are needed. |
 
 ### Content Structure Creation
 
@@ -39,7 +40,7 @@ This document is a routing guide for which skills to use and when. Each skill fi
 | `attach-taxonomies` | Attach taxonomies to collections (adds `taxonomies` to collection config, `term_template` to taxonomy config). |
 | `create-globals` | Create global set configs and data files (`content/globals/`). |
 | `create-forms` | Create form configs, blueprints, and email templates (`resources/forms/`). |
-| `create-navigations` | Create navigation configs and trees (`content/navigation/`, `content/trees/`). |
+| `create-navigations` | Create navigation configs and trees from `schemas/*_nav.md` (`content/navigation/`, `content/trees/`). Resolves entry UUIDs, archive mounts, and taxonomy term URLs. |
 
 ### Content Population
 
@@ -67,7 +68,8 @@ When building from schemas, execute skills in this order. Skip any step that has
 
 ```
 [0]  scan-project              (optional — audit existing project first)
-[1]  create-schema             --> schemas/*.md
+[1]  create-schema             --> schemas/*.md (collections, taxonomies, globals, forms)
+[1b] create-schema-navigation  --> schemas/*_nav.md (navigation tree structures)
 [2]  create-collections        --> collection configs
 [3]  create-blueprints         --> collection blueprints
 [4]  mount-collections         --> mount pages (only if has_archive: true)
