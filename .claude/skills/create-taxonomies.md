@@ -38,7 +38,7 @@ Read `resources/sites.yaml` (or `config/statamic/sites.php`) — **read only, do
 
 If a schema file exists at `schemas/{handle}.md`, read it to determine the `has_single` value. This controls which fields to include:
 
-- **`has_single: false`** → Omit `template`, `layout`, and `preview_targets`. Terms have no public pages.
+- **`has_single: false`** → Omit `layout` and `preview_targets`. Terms have no public pages.
 
 If no schema file exists, default to `has_single: true`.
 
@@ -57,7 +57,6 @@ title: '{Title}'
 sites:
   - {site_key_1}
   - {site_key_2}
-template: '{handle}/show'
 layout: '{handle}/layout'
 revisions: true
 preview_targets:
@@ -73,7 +72,6 @@ Use when only one site is detected AND `has_single` is `true` or not specified.
 
 ```yaml
 title: '{Title}'
-template: '{handle}/show'
 layout: '{handle}/layout'
 revisions: true
 preview_targets:
@@ -108,6 +106,23 @@ revisions: true
 
 - Replace `{site_key_1}`, `{site_key_2}`, etc. with actual site keys from `resources/sites.yaml`
 - Taxonomies do NOT use a `route` field — Statamic handles taxonomy term routing automatically
+- Do NOT include `template` or `term_template` — Statamic auto-resolves views based on naming conventions (e.g., `{taxonomy}/show`, `{taxonomy}/index`). The `create-view-boilerplates` skill generates these view files.
+
+#### Taxonomy view system
+
+Statamic supports 4 taxonomy view types that auto-activate when the corresponding view files exist:
+
+| View | URL Pattern | View Path | Purpose |
+|------|-------------|-----------|---------|
+| Global taxonomy index | `/{taxonomy}` | `{taxonomy}/index` | Lists all terms |
+| Global single term | `/{taxonomy}/{term}` | `{taxonomy}/show` | Entries for a term (all collections) |
+| Collection taxonomy index | `/{collection}/{taxonomy}` | `{collection}/{taxonomy}/index` | Terms for one collection only |
+| Collection single term | `/{collection}/{taxonomy}/{term}` | `{collection}/{taxonomy}/show` | Entries for a term (one collection only) |
+
+- The `template` field in the taxonomy config controls the **global single term** view (`{taxonomy}/show`).
+- **Index views** and **collection-scoped views** auto-activate based on view file naming conventions — no config field needed.
+- The `term_template` field (managed by the `attach-taxonomies` skill) controls collection-scoped term pages.
+- This skill only sets `template` and `layout`. For `term_template`, use `attach-taxonomies`. For generating the actual view files, use `create-view-boilerplates`.
 
 ## Rules
 
@@ -120,8 +135,8 @@ revisions: true
 7. Output valid YAML only.
 8. Always detect multisite in Step 1 before writing the taxonomy config. If multisite is enabled, you MUST include the `sites` field.
 9. Always use the complete YAML template from Step 3. Do NOT skip any fields.
-10. **If `has_single: false`** — do NOT include `template`, `layout`, or `preview_targets`.
-11. **Never include a `route` field** — Statamic handles taxonomy routing automatically.
+10. **If `has_single: false`** — do NOT include `layout` or `preview_targets`.
+11. **Never include `template`, `term_template`, or `route`** — Statamic auto-resolves views by naming convention and handles routing automatically.
 
 ## Accuracy Checks
 
@@ -129,8 +144,9 @@ Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path is `content/taxonomies/{handle}.yaml`
 - [ ] All fields from the matching Step 3 template are present (no fields skipped)
-- [ ] If `has_single: true` (or not specified): `template`, `layout`, and `preview_targets` are present
-- [ ] If `has_single: false`: `template`, `layout`, and `preview_targets` are NOT present
+- [ ] If `has_single: true` (or not specified): `layout` and `preview_targets` are present
+- [ ] If `has_single: false`: `layout` and `preview_targets` are NOT present
+- [ ] No `template` or `term_template` field is present (Statamic auto-resolves views by naming convention)
 - [ ] No `route` field is present (taxonomies never use `route`)
 - [ ] If multisite is enabled: `sites` lists all site keys
 - [ ] No collection configs, blueprints, entries, templates, or other out-of-scope files were created or edited

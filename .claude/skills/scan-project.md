@@ -97,9 +97,14 @@ For each blueprint:
 For each `.yaml` file in `content/taxonomies/` (only root-level config files, not term files in subdirectories):
 
 1. Read the taxonomy config file
-2. Record: `title`, `route`, `template`, `layout`, `term_template`, `sites`, `revisions`
-3. Determine `has_single` — true if `route` is present, false if absent
-4. **Check view file existence** — For each `template`, `layout`, and `term_template` value, check whether the corresponding view file exists in `resources/views/`. Check for both `.antlers.html` and `.blade.php` extensions. For example, `term_template: categories/show` means check for `resources/views/categories/show.antlers.html` or `resources/views/categories/show.blade.php`. Record the result (exists with which extension, or missing).
+2. Record: `title`, `template` (if present), `layout`, `term_template` (if present), `sites`, `revisions`
+3. Determine `has_single` — true if any of `template`, `layout`, or `preview_targets` is present; false if none are present (taxonomies do NOT use `route` — Statamic handles routing automatically, and `template`/`term_template` are typically omitted in favor of auto-resolution by naming convention)
+4. **Check view file existence** — For each `template`, `layout`, and `term_template` value, check whether the corresponding view file exists in `resources/views/`. Check for both `.antlers.html` and `.blade.php` extensions. Record the result (exists with which extension, or missing).
+5. **Check taxonomy index view** — For each taxonomy with `has_single: true`, check if `resources/views/{taxonomy}/index.antlers.html` or `.blade.php` exists. This view auto-activates when present (no config field needed).
+6. **Check collection-scoped taxonomy views** — Cross-reference with collection configs from Step 2. For each collection that has this taxonomy in its `taxonomies` list (and the taxonomy has `has_single: true`), check for:
+   - `resources/views/{collection}/{taxonomy}/index.antlers.html` (or `.blade.php`)
+   - `resources/views/{collection}/{taxonomy}/show.antlers.html` (or `.blade.php`)
+   Record existence for each.
 
 ### Step 6: Count and List Terms
 
@@ -193,7 +198,7 @@ If the user requests reverse-engineered schemas:
    - If multisite, add `multisite: true` and list all sites
 
 2. For each taxonomy, generate a schema file at `schemas/{handle}.md`:
-   - Set `has_single: true` if the taxonomy has a `route`, `false` otherwise
+   - Set `has_single: true` if the taxonomy has a `template` configured, `false` otherwise (taxonomies do NOT use `route`)
    - Extract `collections` from cross-referencing which collections have this taxonomy in their `taxonomies` list
 
 3. For each global, generate a schema at `schemas/{handle}.md`
@@ -306,10 +311,10 @@ Default-site entries show which other sites have a localized version in the `Loc
 
 ## 3. Taxonomies
 
-| Taxonomy | Terms | Route | Template | Layout | Attached To |
-|----------|-------|-------|----------|--------|-------------|
-| categories | 6 | /category/{slug} | categories/show | categories/layout | posts |
-| tags | 15 | /tag/{slug} | tags/show | tags/layout | posts |
+| Taxonomy | Terms | Has Single | Template | Layout | Term Template | Attached To |
+|----------|-------|------------|----------|--------|---------------|-------------|
+| categories | 6 | Yes | -- | categories/layout | -- | posts |
+| tags | 15 | Yes | -- | tags/layout | -- | posts |
 
 ### View File Status
 
@@ -317,19 +322,27 @@ Default-site entries show which other sites have a localized version in the `Loc
 |----------|------|------|--------|
 | categories | template | `resources/views/categories/show.antlers.html` | Exists |
 | categories | layout | `resources/views/categories/layout.antlers.html` | Exists |
-| categories | term_template | -- | No term_template configured |
+| categories | index | `resources/views/categories/index.antlers.html` | MISSING |
+| categories | term_template | `resources/views/posts/show.antlers.html` | Exists |
+| categories | collection index | `resources/views/posts/categories/index.antlers.html` | MISSING |
+| categories | collection show | `resources/views/posts/categories/show.antlers.html` | MISSING |
 | tags | template | `resources/views/tags/show.antlers.html` | MISSING |
 | tags | layout | `resources/views/tags/layout.antlers.html` | Exists |
+| tags | index | `resources/views/tags/index.antlers.html` | MISSING |
 | tags | term_template | -- | No term_template configured |
+| tags | collection index | `resources/views/posts/tags/index.antlers.html` | MISSING |
+| tags | collection show | `resources/views/posts/tags/show.antlers.html` | MISSING |
 
 ### Taxonomy Details
 
 #### {handle}
 - **Title:** {title}
-- **Route:** `{route}` {or `--` if absent}
+- **Has single:** {Yes | No} (true if any of `template`, `layout`, or `preview_targets` is present)
 - **Template:** `{template}` {or `--` if absent} — {View exists: `resources/views/{template}.antlers.html` | View exists: `resources/views/{template}.blade.php` | MISSING | --}
 - **Layout:** `{layout}` {or `--` if absent} — {View exists: `resources/views/{layout}.antlers.html` | View exists: `resources/views/{layout}.blade.php` | MISSING | --}
 - **Term template:** `{term_template}` {or `--` if absent} — {View exists: `resources/views/{term_template}.antlers.html` | View exists: `resources/views/{term_template}.blade.php` | MISSING | --}
+- **Index view:** `resources/views/{taxonomy}/index` — {Exists | MISSING} (auto-activates when file exists)
+- **Collection-scoped views:** {For each attached collection, list `{collection}/{taxonomy}/index` and `{collection}/{taxonomy}/show` with existence status}
 - **Attached to collections:** {comma-separated list}
 - **Blueprints:** {comma-separated list}
 - **Term count:** {N}
@@ -567,6 +580,7 @@ Use `--` for absent/empty values. Do not omit sections — if no items exist for
 11. **Handle replicator and grid sub-fields.** Blueprint fields of type `replicator` or `grid` contain nested field definitions. List these as indented sub-fields in the blueprint field details.
 12. **Do not auto-generate schemas.** Only generate reverse-engineered `schemas/*.md` files if the user explicitly requests it. If schema files already exist, warn before overwriting.
 13. **Check view file existence.** For every `template`, `layout`, and `term_template` value in collection and taxonomy configs, check whether the corresponding view file exists in the project's `resources/views/` directory. Check for both `.antlers.html` and `.blade.php` extensions. Report the actual path and extension found, or mark as `MISSING` if neither exists. If the config value is absent (`--`), skip the check.
+14. **Check all 4 taxonomy view types.** For each taxonomy with `has_single: true`, also check for the taxonomy index view (`{taxonomy}/index`). For each collection-taxonomy attachment, check for collection-scoped views (`{collection}/{taxonomy}/index` and `{collection}/{taxonomy}/show`). These views auto-activate when present — no config field needed.
 
 ## Follow Up Questions
 
@@ -622,6 +636,8 @@ Before finishing, verify:
 - [ ] All `taxonomies` lists in collection configs are reflected in the Taxonomy-Collection Attachments
 - [ ] All fieldset imports in blueprints are cross-referenced in the Fieldset Usage section
 - [ ] Every `template`, `layout`, and `term_template` value in collection/taxonomy configs has been checked against `resources/views/` for `.antlers.html` or `.blade.php` existence
+- [ ] Taxonomy index views (`{taxonomy}/index`) checked for each taxonomy with `has_single: true`
+- [ ] Collection-scoped taxonomy views (`{collection}/{taxonomy}/index` and `{collection}/{taxonomy}/show`) checked for each collection-taxonomy attachment
 - [ ] View File Status tables are present in both Collections and Taxonomies sections
 - [ ] Missing view files are clearly marked as `MISSING` in the report
 - [ ] For multisite, each entry/term in the default site shows which other sites it has been localized into (or `(not localized)`)

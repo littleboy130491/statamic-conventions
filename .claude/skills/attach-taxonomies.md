@@ -6,10 +6,9 @@ Attach a Statamic taxonomy to one or more collections so taxonomy terms appear i
 
 **You MUST only edit these files:**
 - `content/collections/{collection}.yaml` — adding only the taxonomy handle to the `taxonomies` list
-- `content/taxonomies/{handle}.yaml` — adding only the `term_template` field
 
 Do NOT create, edit, or modify any other files — including but not limited to:
-- Taxonomy config files beyond adding `term_template` — use `create-taxonomies` skill to create new taxonomies
+- Taxonomy config files (`content/taxonomies/`) — use `create-taxonomies` skill to create new taxonomies
 - Blueprint files (`resources/blueprints/`) — use `create-blueprints` skill instead
 - Term/content files (`content/taxonomies/{taxonomy}/`) — use `create-entries` skill instead
 - Entry files (`content/collections/{collection}/`) — use `create-entries` skill instead
@@ -27,7 +26,7 @@ If the task requires changes outside the allowed scope, stop and inform the user
 
 1. Confirm the taxonomy exists
 2. Add the taxonomy handle to the collection's `taxonomies` list
-3. Add `term_template` to the taxonomy config
+3. Inform about collection-scoped taxonomy views
 
 ## Workflow
 
@@ -50,20 +49,30 @@ If the `taxonomies` key already exists, append to the existing list. If it does 
 
 Repeat for each collection the user wants to attach.
 
-### Step 3: Add Term Template to Taxonomy Config
-
-Edit `content/taxonomies/{handle}.yaml` — add **only** the `term_template` field for each attached collection. Do not modify any other fields in that file:
-
-```yaml
-term_template: '{collection}/show'  # replace {collection} with the collection handle
-```
-
 Taxonomy fields appear automatically in the entry sidebar — no blueprint changes needed.
+
+### Step 3: Inform About Collection-Scoped Views
+
+After attaching, inform the user that collection-scoped taxonomy views are now available. These views auto-activate when the corresponding view files exist — no config field is needed:
+
+| View | URL Pattern | View Path | Purpose |
+|------|-------------|-----------|---------|
+| Collection taxonomy index | `/{collection}/{taxonomy}` | `{collection}/{taxonomy}/index` | Lists terms associated with entries in this collection |
+| Collection single term | `/{collection}/{taxonomy}/{term}` | `{collection}/{taxonomy}/show` | Entries for a term, filtered to this collection only |
+
+For example, attaching `categories` to `posts` enables:
+- `/posts/categories` → lists only categories that have posts
+- `/posts/categories/news` → shows only posts tagged "news"
+
+These are separate from the global taxonomy views (`/categories` and `/categories/news`) which show terms and entries across all collections.
+
+Suggest running the `create-view-boilerplates` skill to generate the view files for these collection-scoped routes.
 
 ## Rules
 
-1. **Only edit** the `taxonomies` list in collection configs and the `term_template` field in the taxonomy config. Do not change any other fields in either file.
-2. **Do not create new files.** This skill only edits existing config files.
+1. **Only edit** the `taxonomies` list in collection configs. Do not change any other fields.
+2. **Do not create new files.** This skill only edits existing collection config files.
+3. **Do not add `template` or `term_template` to taxonomy configs** — Statamic auto-resolves views by naming convention.
 3. **Do not create taxonomies** — use `create-taxonomies` skill instead. If the taxonomy does not exist, ask the user first.
 4. **Do not create blueprints** — use `create-blueprints` skill instead.
 5. **Do not create terms or entries** — use `create-entries` skill instead.
@@ -75,6 +84,6 @@ Taxonomy fields appear automatically in the entry sidebar — no blueprint chang
 Before finishing, verify:
 - [ ] Taxonomy exists at `content/taxonomies/{handle}.yaml` before attaching
 - [ ] Collection config edits only added to the `taxonomies` list — no other fields were changed
-- [ ] Taxonomy config edits only added the `term_template` field — no other fields were changed
+- [ ] No taxonomy config files were modified (no `template` or `term_template` added)
 - [ ] No new files were created
 - [ ] No blueprints, entries, templates, or other out-of-scope files were created or edited

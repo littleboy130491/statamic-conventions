@@ -69,10 +69,25 @@ If the mount page entry has no `template` value, skip it (it uses the default pa
 For each root-level `.yaml` file in `content/taxonomies/` (not term files in subdirectories):
 
 1. Read the taxonomy config file
-2. Record `template`, `layout`, and `term_template` values
-3. Skip taxonomies with no `template`, no `layout`, and no `term_template`
+2. Determine `has_single` — true if `layout` or `preview_targets` is present in the config (taxonomies typically do not have `template` or `term_template` — Statamic auto-resolves views by naming convention)
+3. Skip taxonomies with `has_single: false` (no `layout`, no `preview_targets` — terms have no public pages)
+4. If `layout` is configured, add it to the views list
 
-Add each value to the list of views to check/generate, tagged with the taxonomy handle and view type.
+### Step 4b: Derive Taxonomy Views
+
+Statamic supports 4 taxonomy view types that auto-activate when the corresponding view files exist. Taxonomy configs typically do NOT contain `template` or `term_template` — views are resolved by naming convention.
+
+For each taxonomy with `has_single: true`:
+
+1. **Taxonomy show view** — Derive `{taxonomy}/show` from the taxonomy handle. Add to the views list.
+2. **Taxonomy index view** — Derive `{taxonomy}/index` from the taxonomy handle. Add to the views list.
+
+For each collection config that lists a taxonomy in its `taxonomies` array (and that taxonomy has `has_single: true`):
+
+3. **Collection-scoped taxonomy index** — Derive `{collection}/{taxonomy}/index`. Add to the views list.
+4. **Collection-scoped term show** — Derive `{collection}/{taxonomy}/show`. Add to the views list.
+
+Cross-reference collection configs (Step 2) with taxonomy configs (Step 4) to build the complete list.
 
 ### Step 5: Check View File Existence
 
@@ -144,9 +159,57 @@ For each missing template file, create `resources/views/{value}.antlers.html` wi
 {{ /collection:{handle} }}
 ```
 
+**For taxonomy index templates** (`{taxonomy}/index`), generate:
+- A listing of all terms in the taxonomy using the `{{ terms }}` tag pair
+
+```antlers
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{ terms taxonomy="{taxonomy}" }}
+  <a href="{{ url }}">{{ title }}</a>
+{{ /terms }}
+```
+
 **For taxonomy term templates** (`{taxonomy}/show`), generate:
 - The term's own blueprint fields (title, description, etc.) rendered normally
-- An `{{ entries }}` listing block that shows all entries tagged with this term
+- An `{{ entries }}` listing block that shows all entries tagged with this term (from all collections)
+
+```antlers
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{# Term blueprint fields #}}
+
+{{ entries paginate="10" }}
+  {{ results }}
+    <article>
+      <h2><a href="{{ url }}">{{ title }}</a></h2>
+      {{ if date }}<time>{{ date format="F j, Y" }}</time>{{ /if }}
+    </article>
+  {{ /results }}
+
+  {{ if total_pages > 1 }}
+    <nav>
+      {{ if prev_page }}<a href="{{ prev_page }}">Previous</a>{{ /if }}
+      {{ if next_page }}<a href="{{ next_page }}">Next</a>{{ /if }}
+    </nav>
+  {{ /if }}
+{{ /entries }}
+```
+
+**For collection-scoped taxonomy index templates** (`{collection}/{taxonomy}/index`), generate:
+- A listing of terms associated with entries in that specific collection
+
+```antlers
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{ terms taxonomy="{taxonomy}" }}
+  <a href="{{ url }}">{{ title }}</a>
+{{ /terms }}
+```
+
+**For collection-scoped term templates** (`{collection}/{taxonomy}/show`), generate:
+- The term's own blueprint fields rendered normally
+- An `{{ entries }}` listing block (entries are automatically filtered to the collection in scope)
 
 ```antlers
 {{ if title }}<h1>{{ title }}</h1>{{ /if }}
@@ -266,7 +329,7 @@ Use these patterns when generating template boilerplate. Every field MUST be wra
 
 - **Multiple blueprints per collection** — Generate fields from ALL blueprints (union of fields, deduplicated by handle). Add a comment noting which blueprint each field comes from if there are multiple.
 - **Fieldset imports** — Resolve `import: {handle}` (and `import: {handle}` with `prefix: {prefix}`) by reading `resources/fieldsets/{handle}.yaml`. Include imported fields in the template with their prefixed handles if a prefix is specified.
-- **`term_template`** — This is the template used when viewing entries filtered by a term from a collection context. Check existence and generate a boilerplate if missing. The `term_template` value typically points to a collection's show template (e.g., `products/show`).
+- **Taxonomy view auto-resolution** — Taxonomy configs typically do NOT contain `template` or `term_template`. Statamic auto-resolves views by naming convention (`{taxonomy}/show`, `{taxonomy}/index`, `{collection}/{taxonomy}/show`, `{collection}/{taxonomy}/index`). This skill derives all 4 view paths from the taxonomy handle and its collection attachments. If `template` or `term_template` IS present in a config (set via CP), respect those values instead of the naming convention.
 - **Mount page archive templates** — Read the mount page entry to get its `template` value. Generate an archive boilerplate that includes the page's own blueprint fields PLUS a `{{ collection:{mounted-collection-handle} }}` listing block. Resolve mount UUID by scanning page entries for matching `id`.
 - **Subdirectories** — Create subdirectories under `resources/views/` as needed (e.g., `resources/views/posts/` for `posts/show`).
 
@@ -340,6 +403,78 @@ A generated archive template for `resources/views/posts/index.antlers.html` wher
     {{ if excerpt }}<p>{{ excerpt }}</p>{{ /if }}
   </article>
 {{ /collection:posts }}
+```
+
+## Taxonomy Index Template Example
+
+A generated taxonomy index template for `resources/views/categories/index.antlers.html`:
+
+```antlers
+{{#
+  Template: categories/index
+  Lists all terms in the categories taxonomy.
+#}}
+
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{ terms taxonomy="categories" }}
+  <a href="{{ url }}">{{ title }}</a>
+{{ /terms }}
+```
+
+## Collection-Scoped Taxonomy Index Template Example
+
+A generated collection-scoped taxonomy index template for `resources/views/posts/categories/index.antlers.html`:
+
+```antlers
+{{#
+  Template: posts/categories/index
+  Lists categories associated with posts only.
+#}}
+
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{ terms taxonomy="categories" }}
+  <a href="{{ url }}">{{ title }}</a>
+{{ /terms }}
+```
+
+## Collection-Scoped Term Template Example
+
+A generated collection-scoped term template for `resources/views/posts/categories/show.antlers.html`:
+
+```antlers
+{{#
+  Template: posts/categories/show
+  Blueprint fields:
+
+  title (text) — Term title
+  description (textarea) — Term description
+
+  Entries: posts tagged with this term (filtered to posts collection)
+#}}
+
+{{ if title }}<h1>{{ title }}</h1>{{ /if }}
+
+{{ if description }}
+  <div>{{ description | nl2br }}</div>
+{{ /if }}
+
+{{ entries paginate="10" }}
+  {{ results }}
+    <article>
+      <h2><a href="{{ url }}">{{ title }}</a></h2>
+      {{ if date }}<time>{{ date format="F j, Y" }}</time>{{ /if }}
+    </article>
+  {{ /results }}
+
+  {{ if total_pages > 1 }}
+    <nav>
+      {{ if prev_page }}<a href="{{ prev_page }}">Previous</a>{{ /if }}
+      {{ if next_page }}<a href="{{ next_page }}">Next</a>{{ /if }}
+    </nav>
+  {{ /if }}
+{{ /entries }}
 ```
 
 ## Taxonomy Term Template Example
@@ -416,7 +551,9 @@ A generated layout for `resources/views/posts/layout.antlers.html`:
 10. **Generate from all blueprints.** When a collection or taxonomy has multiple blueprints, include fields from all of them (deduplicated by handle).
 11. **Do not modify collection configs, taxonomy configs, blueprints, entries, or any file outside `resources/views/`.** If changes are needed outside the allowed path, inform the user.
 12. **Archive templates must include a listing tag.** Mount page templates must include a `{{ collection:{handle} }}` block for the mounted collection.
-13. **Taxonomy term templates must include an `{{ entries }}` listing block.** Term show templates must include an `{{ entries paginate="10" }}` block to list entries tagged with the term, with pagination support.
+13. **Taxonomy term templates must include an `{{ entries }}` listing block.** Term show templates (both global and collection-scoped) must include an `{{ entries paginate="10" }}` block to list entries tagged with the term, with pagination support.
+16. **Taxonomy index templates must include a `{{ terms }}` listing block.** Both global (`{taxonomy}/index`) and collection-scoped (`{collection}/{taxonomy}/index`) index templates must include a `{{ terms taxonomy="{taxonomy}" }}` block.
+17. **Generate all 4 taxonomy view types.** For each taxonomy with `has_single: true`: generate `{taxonomy}/index` and `{taxonomy}/show`. For each collection-taxonomy attachment: generate `{collection}/{taxonomy}/index` and `{collection}/{taxonomy}/show`.
 14. **Always detect multisite in Step 1** before scanning for mount page entries, as page entry directories differ between single-site and multisite projects.
 15. **Use the Field Type Mapping Reference** for all field type rendering. For unknown types, fall back to `{{ if handle }}{{ handle }}{{ /if }}` with a comment.
 
@@ -434,6 +571,9 @@ Before finishing, verify:
 - [ ] Replicator sets are rendered inline with type-checking blocks
 - [ ] Archive templates include a `{{ collection:{handle} }}` listing block
 - [ ] Taxonomy term templates include an `{{ entries paginate="10" }}` listing block with pagination
+- [ ] Taxonomy index templates include a `{{ terms taxonomy="{taxonomy}" }}` listing block
+- [ ] Collection-scoped taxonomy views are generated for each collection-taxonomy attachment
+- [ ] All 4 taxonomy view types are covered: `{taxonomy}/index`, `{taxonomy}/show`, `{collection}/{taxonomy}/index`, `{collection}/{taxonomy}/show`
 - [ ] Layout boilerplates contain structural hooks only, no field rendering
 - [ ] The base `resources/views/layout.antlers.html` was not modified
 - [ ] No collection configs, taxonomy configs, blueprints, entries, or other out-of-scope files were created or edited
