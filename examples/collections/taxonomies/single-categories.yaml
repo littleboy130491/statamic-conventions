@@ -1,11 +1,8 @@
 title: Categories
-template: categories/show
 layout: categories/layout
 revisions: true
-route: /categories/{slug}
 preview_targets:
   -
     label: Entry
     url: '{permalink}'
     refresh: true
-term_template: posts/show

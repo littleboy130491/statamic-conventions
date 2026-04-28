@@ -38,21 +38,26 @@ Do NOT create directories or files outside these paths.
 
 ## Blueprint Structure
 
-Every blueprint MUST have a `title` and `tabs`. Use exactly these 4 tabs in this order:
+Every blueprint MUST have a `title`. Use the structure that matches the content type:
 
-| Tab | Purpose | Fields |
-|-----|---------|--------|
-| `main` | Primary content | title, content/bard, excerpt, featured_image, and other content fields |
-| `sidebar` | Meta & relationships | author, categories, tags, toggles, slug, date, and other meta fields. **See [No Duplicate Fields](#no-duplicate-fields).** |
-| `SEO Meta` | SEO Pro addon | Hardcoded — always include exactly as shown below |
-| `SEO Previews` | SEO Pro addon | Hardcoded — always include exactly as shown below |
+| Type | Recommended structure |
+|------|-----------------------|
+| Collections / Taxonomies / Globals | `tabs` with `main` for primary fields and `sidebar` for metadata/relationships when useful |
+| Forms | A flat `fields` array is acceptable and matches Statamic's form examples |
+| Assets / Users / Navigation | Use the smallest valid structure needed for the fields |
 
-**How to build:**
+Do not force empty tabs into simple blueprints. For marketing sites, clarity for editors matters more than a uniform shape.
+
+**How to build collection/taxonomy/global blueprints:**
 
 1. `title` — Set to the blueprint display name (e.g., "Post", "Page", "Product")
 2. `main` tab — Add sections with content fields. Each section can have a `display` name and `instructions`
-3. `sidebar` tab — Add a section with meta/relationship fields
-4. `SEO Meta` and `SEO Previews` tabs — Copy these exactly as-is, do not modify:
+3. `sidebar` tab — Add meta/relationship fields only when useful. **See [No Duplicate Fields](#no-duplicate-fields).**
+4. SEO fields — Only add SEO Pro tabs if `composer.json` contains `statamic/seo-pro`. If SEO Pro is not installed, either omit SEO fields or add explicit project fields such as `meta_title`, `meta_description`, and `og_image` when requested by the schema.
+
+### SEO Pro Tabs
+
+Only use these tabs when the SEO Pro addon is installed:
 
 ```yaml
   'SEO Meta':
@@ -88,7 +93,7 @@ Every blueprint MUST have a `title` and `tabs`. Use exactly these 4 tabs in this
 
 Each field follows this structure. Only include properties that are needed — omit defaults.
 
-**Before writing any fields**, check if the project uses multisite (see [Multisite & Localization](#multisite--localization)). If it does, you MUST add `localizable: true` to every field unless it explicitly qualifies for an exception.
+**Before writing any fields**, check if the project uses multisite (see [Multisite & Localization](#multisite--localization)). If it does, add `localizable: true` to fields that should vary by site/locale unless they explicitly qualify for an exception.
 
 ```yaml
 -
@@ -102,7 +107,7 @@ Each field follows this structure. Only include properties that are needed — o
       - required
       - min:3
     default: Default value
-    localizable: true          # REQUIRED if multisite is enabled — do not omit
+    localizable: true          # Use for site/locale-specific fields in multisite projects
     visibility: visible
     width: 50
     if:
@@ -323,14 +328,14 @@ unless:
 
 ### Step 1 — Detect multisite
 
-Before creating or editing any blueprint, read `config/statamic/sites.php` (read only — do not modify). If it defines more than one site, or if `resources/sites` contains multiple directories, the project uses multisite.
+Before creating or editing any blueprint, read `resources/sites.yaml` first (read only — do not modify). If missing, fall back to `config/statamic/sites.php`. Multiple site keys means the project uses multisite.
 
-### Step 2 — Apply `localizable: true` to every field
+### Step 2 — Apply `localizable: true` intentionally
 
-If multisite is enabled, you MUST add `localizable: true` to **every single field** in the blueprint. Do not skip this property on any field. The only permitted exceptions are listed below — if a field does not match an exception, it MUST have `localizable: true`.
+If multisite is enabled, add `localizable: true` to fields whose values should differ between sites/locales. The exceptions below are usually shared and may use `localizable: false` or omit the property.
 
 ```yaml
-# Default for EVERY field when multisite is enabled
+# Default for user-facing fields when multisite is enabled
 field:
   type: text
   localizable: true
@@ -356,7 +361,7 @@ These field types must always have `localizable: true` — no exceptions:
 - `title`, `bard`, `textarea`, `markdown`, `text` — any user-facing text
 - `slug` — each locale needs its own URL
 - `assets` — different images/files per locale
-- SEO fields (`seo_pro`, `seo_pro_previews`)
+- SEO fields (`seo_pro`, `seo_pro_previews`) only when SEO Pro is installed
 - `date` — if publication dates may differ per locale
 
 ## No Duplicate Fields
@@ -371,12 +376,12 @@ This rule applies to all fields, not just `slug`. Other fields prone to duplicat
 
 1. **Only write to** `resources/blueprints/`. No exceptions.
 2. **Do not create content entries, templates, config, routes, or any non-blueprint file.**
-3. **Before writing any blueprint**, check if multisite is enabled. If it is, every field MUST include `localizable: true` unless it qualifies for a specific exception listed in [Multisite & Localization](#multisite--localization).
+3. **Before writing any blueprint**, check if multisite is enabled. If it is, user-facing fields should include `localizable: true` unless they qualify for a specific exception listed in [Multisite & Localization](#multisite--localization).
 4. Blueprint handles must match content handles for forms, navigation, and globals.
 5. Output valid YAML only. Tabs contain sections, sections contain fields.
 6. Field `handle` is the key used in templates — use snake_case.
-7. Always include all 4 tabs (`main`, `sidebar`, `SEO Meta`, `SEO Previews`).
-8. Copy `SEO Meta` and `SEO Previews` tabs verbatim — do not alter them.
+7. Do not force SEO Pro tabs unless `statamic/seo-pro` is installed.
+8. If SEO Pro is installed, copy `SEO Meta` and `SEO Previews` tabs verbatim — do not alter them.
 9. You may read other project files (config, existing blueprints, content) to inform your work, but do not modify them.
 10. **No duplicate field handles.** Every handle must appear exactly once across the entire blueprint. If a field from the user's schema overlaps with a conventional sidebar field (e.g., `slug`), include it only once. See [No Duplicate Fields](#no-duplicate-fields).
 
@@ -385,10 +390,10 @@ This rule applies to all fields, not just `slug`. Other fields prone to duplicat
 Before finishing, verify:
 - [ ] File is valid YAML
 - [ ] File path matches the correct blueprint location from the table above
-- [ ] All 4 tabs are present in the correct order
-- [ ] SEO tabs are copied exactly as specified
+- [ ] Blueprint structure fits its type (`tabs` for complex content, flat `fields` acceptable for forms)
+- [ ] SEO Pro tabs are present only when `statamic/seo-pro` is installed
 - [ ] No files were created or edited outside `resources/blueprints/`
-- [ ] If multisite is enabled: every field has `localizable: true` unless it qualifies for a listed exception
+- [ ] If multisite is enabled: user-facing fields have `localizable: true` unless they qualify for a listed exception
 - [ ] Required fields use `validate: [required]`
 - [ ] Field handles use snake_case
 - [ ] No duplicate field handles across the entire blueprint (especially `slug`, `title`, `date`, `author`)

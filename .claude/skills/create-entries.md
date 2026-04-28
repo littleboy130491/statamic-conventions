@@ -5,8 +5,8 @@ Create Statamic entry files with dummy content for collections and pages.
 ## Scope
 
 **You MUST only create files at:**
-- Single site: `content/collections/{collection}/{slug}.md` or `content/collections/{collection}/{date}.{slug}.md`
-- Multisite (default site only): `content/collections/{collection}/{default-site-handle}/{slug}.md` or `content/collections/{collection}/{default-site-handle}/{date}.{slug}.md`
+- Single site: `content/collections/{collection}/{slug}.md` or `content/collections/{collection}/{YYYY-MM-DD}.{slug}.md`
+- Multisite (default site only): `content/collections/{collection}/{default-site-handle}/{slug}.md` or `content/collections/{collection}/{default-site-handle}/{YYYY-MM-DD}.{slug}.md`
 
 This skill is for **collection entries only**. Do NOT create taxonomy terms — use the `create-terms` skill instead.
 
@@ -40,7 +40,7 @@ If the task requires changes outside the allowed paths, stop and inform the user
 
 Read the collection config at `content/collections/{collection}.yaml` — **read only, do not modify**.
 
-If the config contains `date: true`, the collection uses dated entries and the filename MUST use the `{YYYY-MM-DD-HHmm}.{slug}.md` format. If `date: true` is not present, use the standard `{slug}.md` format.
+If the config contains `date: true`, the collection uses dated entries and the filename MUST use the `{YYYY-MM-DD}.{slug}.md` format. If `date: true` is not present, use the standard `{slug}.md` format.
 
 Example collection config (`content/collections/posts.yaml`):
 ```yaml
@@ -53,11 +53,11 @@ sort_dir: desc
 
 **Single site:**
 - Standard (no `date: true`): `content/collections/{collection}/{slug}.md`
-- Dated (`date: true`): `content/collections/{collection}/{YYYY-MM-DD-HHmm}.{slug}.md`
+- Dated (`date: true`): `content/collections/{collection}/{YYYY-MM-DD}.{slug}.md`
 
 **Multisite (default site only):**
 - Standard (no `date: true`): `content/collections/{collection}/{default-site-handle}/{slug}.md`
-- Dated (`date: true`): `content/collections/{collection}/{default-site-handle}/{YYYY-MM-DD-HHmm}.{slug}.md`
+- Dated (`date: true`): `content/collections/{collection}/{default-site-handle}/{YYYY-MM-DD}.{slug}.md`
 
 Do NOT create entry files under non-default site directories — use the `create-translations` skill for those.
 
@@ -155,9 +155,9 @@ Each entry MUST have a unique ID.
 
 ## Dated Entries
 
-**Filename format:** `{YYYY-MM-DD-HHmm}.{slug}.md` — always use today's date and current time.
+**Filename format:** `{YYYY-MM-DD}.{slug}.md` — use the entry's publication date.
 
-Example: `2026-02-09-1700.my-first-post.md`
+Example: `2026-02-09.my-first-post.md`
 
 **Date/time fields** use Unix timestamps (seconds since epoch).
 

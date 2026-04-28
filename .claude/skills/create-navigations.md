@@ -32,7 +32,7 @@ tree:
 |------|-----------------|------------------|
 | `entry` | `{collection}/{slug}` | Look up entry UUID from `content/collections/{collection}/{slug}.md` → use `entry: {uuid}` |
 | `archive` | `{collection}` | Find the mount entry for that collection (the page whose slug matches the collection's `mount` value) → use `entry: {mount-entry-uuid}` |
-| `term` | `{taxonomy}/{slug}` | Resolve URL from taxonomy route config → use `title: {Label}` and `url: {resolved-url}` (hardcoded link) |
+| `term` | `{taxonomy}/{slug}` | Derive the global term URL from taxonomy handle and term slug → use `title: {Label}` and `url: {resolved-url}` (hardcoded link) |
 | `link` | `{url}` | Use `title: {Label}` and `url: {url}` |
 | `text` | _(none)_ | Use `title: {Label}` only (no `url`, no `entry`) |
 
@@ -50,7 +50,7 @@ tree:
 2. **Detect multisite** — Check `resources/sites.yaml`
 3. **Resolve entry UUIDs** — Scan entry files to map `collection/slug` → UUID
 4. **Create nav config** — `content/navigation/{handle}.yaml`
-5. **Create nav tree** — `content/trees/navigation/{handle}.yaml` (or per-site)
+5. **Create nav tree** — single-site uses `content/trees/navigation/{handle}.yaml`; multisite uses localized tree files at `content/navigation/{site}/{handle}.yaml`
 
 ## Workflow
 
@@ -69,7 +69,7 @@ Read `schemas/{handle}_nav.md` and parse:
 Read `resources/sites.yaml` — cross-check against schema's `multisite` and `sites` values.
 
 - Single site → one tree file at `content/trees/navigation/{handle}.yaml`
-- Multisite → one tree file per site at `content/trees/navigation/{site}/{handle}.yaml`
+- Multisite → one localized tree file per site at `content/navigation/{site}/{handle}.yaml`
 
 ### Step 3: Resolve Entry UUIDs
 
@@ -85,11 +85,12 @@ For every `entry` and `archive` item in the schema tree, you need the entry's UU
 
 **For `term` type** (`{taxonomy}/{slug}`):
 Statamic navigation does NOT support taxonomy terms natively — only entries, hardcoded URLs, and text. So `term` items become hardcoded URL links.
-1. Read the taxonomy config `content/taxonomies/{taxonomy}.yaml` to find the `route` (e.g., `/categories/{slug}`)
-2. Replace `{slug}` in the route with the term's slug to get the final URL
-3. Generate a `link` node with `title: {Label}` and `url: {resolved-url}`
+1. Verify the taxonomy config exists at `content/taxonomies/{taxonomy}.yaml`
+2. Convert underscores in the taxonomy handle to dashes for the URL segment if needed
+3. Use `/{taxonomy-slug}/{term-slug}` as the global term URL
+4. Generate a `link` node with `title: {Label}` and `url: {resolved-url}`
 
-Example: `term` reference `categories/news` + taxonomy route `/categories/{slug}` → URL `/categories/news`
+Example: `term` reference `product_categories/wooden-toys` → URL `/product-categories/wooden-toys`
 
 **If an entry file doesn't exist yet** (collection/entries not created), you have two options:
 - Ask the user to run `create-entries` or `create-static-pages` first
@@ -124,7 +125,7 @@ sites:
 
 **Path:**
 - Single site: `content/trees/navigation/{handle}.yaml`
-- Multisite: `content/trees/navigation/{site}/{handle}.yaml`
+- Multisite: `content/navigation/{site}/{handle}.yaml`
 
 Convert the schema tree into YAML tree format. Each node needs a unique `id`.
 
@@ -152,12 +153,11 @@ Schema:  - Blog | archive | blog_posts
   entry: a1b2c3d4-5e6f-7a8b-9c0d-e1f2a3b4c5d6    # UUID of the mount page
 ```
 
-**`term` type** → hardcoded URL node (resolved from taxonomy route):
+**`term` type** → hardcoded URL node (derived from taxonomy handle and term slug):
 ```
 Schema:  - News | term | categories/news
 ```
 ```yaml
-# Taxonomy route: /categories/{slug} → resolved URL: /categories/news
 -
   id: header-5
   title: News
@@ -216,7 +216,7 @@ For multisite, create one tree file per site. The tree structure is the same but
 For each site:
 1. Read entry files from `content/collections/{collection}/{site}/{slug}.md` (or the default site path)
 2. Resolve UUIDs per site
-3. Write to `content/trees/navigation/{site}/{handle}.yaml`
+3. Write to `content/navigation/{site}/{handle}.yaml`
 
 ## Full Example
 
@@ -451,7 +451,7 @@ Before finishing, verify:
 - [ ] Nav tree exists at correct path (single site vs multisite)
 - [ ] Every `entry` schema item resolved to a valid UUID in the tree
 - [ ] Every `archive` schema item resolved to the mount entry UUID
-- [ ] Every `term` schema item resolved to a hardcoded URL node (`title` + `url`) using the taxonomy's route config
+- [ ] Every `term` schema item resolved to a hardcoded URL node (`title` + `url`) using the taxonomy handle and term slug
 - [ ] Every `link` schema item has both `title` and `url` in the tree
 - [ ] Every `text` schema item has `title` only (no `url`, no `entry`)
 - [ ] All tree nodes have unique `id` values

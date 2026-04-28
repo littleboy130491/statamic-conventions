@@ -126,7 +126,7 @@ For each `.yaml` file in `content/navigation/`:
 
 For each navigation, check for tree files:
 - Single site: `content/trees/navigation/{handle}.yaml`
-- Multisite: `content/trees/navigation/{site}/{handle}.yaml`
+- Multisite: `content/navigation/{site}/{handle}.yaml`
 
 If tree files exist, count the total number of items (including nested children) and count top-level items separately.
 
@@ -176,7 +176,7 @@ For each `.yaml` file in `content/assets/`:
 
 Using data gathered in all previous steps, build the relationships:
 
-1. **Taxonomy-Collection attachments** — From collection configs (`taxonomies` field) and taxonomy configs (`term_template` field)
+1. **Taxonomy-Collection attachments** — From collection configs (`taxonomies` field)
 2. **Collection mounts** — From collection configs (`mount` field). Resolve the mount UUID to find the page entry title by reading the corresponding entry file in the pages collection
 3. **Entry field references** — From blueprint fields with `type: entries` (record the `collections` list), `type: terms` (record the `taxonomies` list), `type: users`
 4. **Fieldset imports** — From blueprint `import:` directives, cross-referenced with fieldset files
@@ -401,7 +401,7 @@ Default-site entries show which other sites have a localized version of the term
 
 | Form | Blueprint | Fields |
 |------|-----------|--------|
-| contact | contact | 4 (name, email, subject, message) |
+| contact | contact | 4 (name, email, subject, submission_message) |
 
 ### Blueprint Field Details
 
@@ -580,7 +580,7 @@ Use `--` for absent/empty values. Do not omit sections — if no items exist for
 10. **Use `--` for absent values.** When a field is not present in a config (e.g., no route for a `has_single: false` collection), display `--` in the table.
 11. **Handle replicator and grid sub-fields.** Blueprint fields of type `replicator` or `grid` contain nested field definitions. List these as indented sub-fields in the blueprint field details.
 12. **Do not auto-generate schemas.** Only generate reverse-engineered `schemas/*.md` files if the user explicitly requests it. If schema files already exist, warn before overwriting.
-13. **Check view file existence.** For every `template`, `layout`, and `term_template` value in collection and taxonomy configs, check whether the corresponding view file exists in the project's `resources/views/` directory. Check for both `.antlers.html` and `.blade.php` extensions. Report the actual path and extension found, or mark as `MISSING` if neither exists. If the config value is absent (`--`), skip the check.
+13. **Check view file existence.** For every `template` and `layout` value in collection and taxonomy configs, check whether the corresponding view file exists in the project's `resources/views/` directory. Check for both `.antlers.html` and `.blade.php` extensions. Report the actual path and extension found, or mark as `MISSING` if neither exists. If the config value is absent (`--`), skip the check. If legacy taxonomy `template` or `term_template` values are present, record them as legacy config but do not require new projects to use them.
 14. **Check taxonomy views per schema fields.** Read `has_index`, `has_show`, `has_collection_index`, `has_collection_show` from the schema (all default to `true`). Only check view files for enabled view types. Collection-scoped views only apply when collections are attached.
 
 ## Follow Up Questions
@@ -589,7 +589,7 @@ After writing the report, present follow-up options based on the scan results. O
 
 ### 1. Missing View Files
 
-If any `template`, `layout`, or `term_template` values were marked as `MISSING` in the View File Status tables (collections or taxonomies), ask the user:
+If any `template` or `layout` values were marked as `MISSING` in the View File Status tables (collections or taxonomies), ask the user:
 
 > The scan found **{N}** missing view file(s):
 > - `resources/views/{value}.antlers.html` — {collection/taxonomy} {view type}
@@ -636,7 +636,7 @@ Before finishing, verify:
 - [ ] All `mount` references are resolved to page entry titles (or marked as "Unresolved")
 - [ ] All `taxonomies` lists in collection configs are reflected in the Taxonomy-Collection Attachments
 - [ ] All fieldset imports in blueprints are cross-referenced in the Fieldset Usage section
-- [ ] Every `template`, `layout`, and `term_template` value in collection/taxonomy configs has been checked against `resources/views/` for `.antlers.html` or `.blade.php` existence
+- [ ] Every `template` and `layout` value in collection/taxonomy configs has been checked against `resources/views/` for `.antlers.html` or `.blade.php` existence
 - [ ] Taxonomy views checked per schema fields (`has_index`, `has_show`, `has_collection_index`, `has_collection_show`)
 - [ ] Collection-scoped taxonomy views only checked when collections are attached
 - [ ] View File Status tables are present in both Collections and Taxonomies sections

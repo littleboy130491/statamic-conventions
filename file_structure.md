@@ -122,11 +122,11 @@
 
 **Common Fields:**
 
-- `template` — Default template for term pages
-- `layout` — Default layout
+- `layout` — Default layout for taxonomy views when public taxonomy routes are enabled
 - `sites` — Array of site handles (multisite only)
-- `term_template` — Template for individual terms
 - `revisions` — Boolean
+
+Do not add `route`, `template`, or `term_template` for new taxonomy configs. Statamic 6 resolves taxonomy URLs and views by naming convention when the matching view files exist.
 
 **Reference:** https://statamic.dev/taxonomies
 
@@ -209,7 +209,7 @@
 **Path Pattern:**
 
 - Single site: `content/trees/navigation/{nav}.yaml`
-- Multisite: `content/trees/navigation/{site}/{nav}.yaml`
+- Multisite: `content/navigation/{site}/{nav}.yaml`
 
 **Structure:**
 
@@ -438,7 +438,7 @@
 | Terms | `.yaml` | `content/taxonomies/{taxonomy}/{slug}.yaml` | `.../{taxonomy}/{site}/{slug}.yaml` |
 | Collection Trees | `.yaml` | `content/trees/collections/{collection}.yaml` | `.../{site}/{collection}.yaml` |
 | Navigation | `.yaml` | `content/navigation/{handle}.yaml` | — |
-| Nav Trees | `.yaml` | `content/trees/navigation/{nav}.yaml` | `.../{site}/{nav}.yaml` |
+| Nav Trees | `.yaml` | `content/trees/navigation/{nav}.yaml` | `content/navigation/{site}/{nav}.yaml` |
 | Globals (config) | `.yaml` | `content/globals/{handle}.yaml` | — |
 | Globals (data) | `.yaml` | (under `data:` key in config) | `content/globals/{site}/{handle}.yaml` |
 | Forms | `.yaml` | `resources/forms/{handle}.yaml` | — |
@@ -463,7 +463,7 @@ When multisite is enabled, content that varies per site is organized into site-h
 - `content/taxonomies/{taxonomy}/{site}/`
 - `content/globals/{site}/`
 - `content/trees/collections/{site}/`
-- `content/trees/navigation/{site}/`
+- `content/navigation/{site}/`
 
 **Shared across sites (no site subdirectory):**
 

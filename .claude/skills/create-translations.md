@@ -8,7 +8,7 @@ This skill is for **collection entry translations only**. Taxonomy term translat
 
 **You MUST only create files at:**
 - `content/collections/{collection}/{non-default-site}/{slug}.md` or
-- `content/collections/{collection}/{non-default-site}/{YYYY-MM-DD-HHmm}.{slug}.md` (only when the blueprint has a `date` field with `localizable: true`)
+- `content/collections/{collection}/{non-default-site}/{YYYY-MM-DD}.{slug}.md` (for dated collections)
 
 These paths are for non-default sites only. Do NOT create entries for the default site — use the `create-entries` skill for those.
 
@@ -48,7 +48,7 @@ Read `resources/sites.yaml` — **read only, do not modify**:
 Read the blueprint at `resources/blueprints/collections/{collection}/{blueprint}.yaml` — **read only, do not modify**:
 - Identify which fields have `localizable: true` — only these fields should appear in translation entries
 - Fields without `localizable: true` are shared from the origin and must NOT be duplicated
-- **Check for a `date` field with `localizable: true`** — if present, use the dated filename format `{YYYY-MM-DD-HHmm}.{slug}.md`. If the `date` field is absent or not localizable, use the standard `{slug}.md` format
+- Check the collection config for `date: true`. Dated collections use `{YYYY-MM-DD}.{slug}.md`; other collections use `{slug}.md`
 
 ### Step 3: Read the Origin Entry
 
@@ -62,9 +62,9 @@ For each non-default site, create a translation entry:
 
 **Path:**
 - Standard: `content/collections/{collection}/{non-default-site}/{slug}.md`
-- Dated (blueprint has `date` field with `localizable: true`): `content/collections/{collection}/{non-default-site}/{YYYY-MM-DD-HHmm}.{slug}.md`
+- Dated (`date: true` in collection config): `content/collections/{collection}/{non-default-site}/{YYYY-MM-DD}.{slug}.md`
 
-Use the **same slug** as the default site entry for the filename. Use today's date and current time for dated filenames.
+Use the **same slug** as the default site entry for the filename. For dated filenames, use the same date as the origin entry unless the localized entry intentionally has a different publication date.
 
 **Translation entry structure:**
 ```yaml

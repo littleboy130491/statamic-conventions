@@ -1,6 +1,6 @@
 # Create Page Templates
 
-Create or update Antlers page templates that extend the base layout using hooks, partials, contextual body classes, and SEO Pro integration.
+Create or update Antlers page templates that extend the base layout using hooks, partials, contextual body classes, and project-appropriate SEO integration.
 
 ## Quick Start
 
@@ -235,11 +235,14 @@ For pages using replicator-based page builders:
 {{ /if }}
 ```
 
-## SEO Pro Integration
+## SEO Integration
 
-The base layout includes `{{ seo_pro:meta }}` which auto-generates meta tags, OG tags, Twitter cards, and JSON-LD.
+Before adding SEO tags, check `composer.json`.
 
-**Add SEO field to blueprint:**
+- If `statamic/seo-pro` is installed, the base layout may include `{{ seo_pro:meta }}` to auto-generate meta tags, OG tags, Twitter cards, and JSON-LD.
+- If SEO Pro is not installed, use ordinary fields from the active blueprint such as `meta_title`, `meta_description`, and `og_image`, or leave SEO output to the existing layout.
+
+**SEO Pro blueprint field (only when installed):**
 ```yaml
 -
   handle: seo
@@ -249,7 +252,7 @@ The base layout includes `{{ seo_pro:meta }}` which auto-generates meta tags, OG
     localizable: true
 ```
 
-**NEVER create custom SEO fields.** Always use SEO Pro addon.
+Do not add `seo_pro` tags or fieldtypes unless the addon is present.
 
 ## Complete Template Example
 
@@ -382,7 +385,7 @@ w-full min-h-screen
 ## Boundaries
 
 - Do NOT modify `layout.antlers.html` — Use hooks to extend it
-- Do NOT create custom SEO fields — Use SEO Pro addon
+- Do NOT assume SEO Pro is installed — check `composer.json` before using `{{ seo_pro:meta }}` or `seo_pro` fieldtypes
 - Sections do NOT accumulate — Last definition wins, combine in one section
 - Template content renders at `{{ template_content }}` in layout
 

@@ -98,13 +98,13 @@ fields:
         sales: Sales
       validate:
         - required
-  -
-    handle: message
-    field:
-      type: textarea
-      display: Message
-      validate:
-        - required
+      -
+        handle: submission_message
+        field:
+          type: textarea
+          display: Message
+          validate:
+            - required
 ```
 
 ### Available Form Fieldtypes
@@ -117,6 +117,8 @@ fields:
 - `assets` — File uploads
 - `integer` — Number input
 - `toggle` — Yes/no toggle
+
+Avoid using `message` as a form field handle when the form sends email. Statamic reserves `message` in the email context. Use `submission_message`, `comments`, or another explicit handle instead.
 
 ## Email Templates
 
@@ -136,7 +138,7 @@ fields:
   <p><strong>Email:</strong> {{ email }}</p>
   <p><strong>Subject:</strong> {{ subject }}</p>
   <p><strong>Message:</strong></p>
-  <p>{{ message }}</p>
+  <p>{{ submission_message }}</p>
 
   <hr>
   <p>Submitted on {{ date format="F j, Y \a\t g:i a" }}</p>
@@ -153,7 +155,7 @@ Email: {{ email }}
 Subject: {{ subject }}
 
 Message:
-{{ message }}
+{{ submission_message }}
 
 ---
 Submitted on {{ date format="F j, Y \a\t g:i a" }}
@@ -192,9 +194,9 @@ Submitted on {{ date format="F j, Y \a\t g:i a" }}
     </div>
 
     <div>
-      <label for="message">Message</label>
-      <textarea name="message" id="message">{{ old:message }}</textarea>
-      {{ if error:message }}<span class="error">{{ error:message }}</span>{{ /if }}
+      <label for="submission_message">Message</label>
+      <textarea name="submission_message" id="submission_message">{{ old:submission_message }}</textarea>
+      {{ if error:submission_message }}<span class="error">{{ error:submission_message }}</span>{{ /if }}
     </div>
 
     <button type="submit">Send</button>

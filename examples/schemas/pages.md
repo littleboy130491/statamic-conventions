@@ -1,6 +1,8 @@
 schema_name: pages
 schema_type: collection
 title: Pages
+has_single: true
+has_archive: false
 route: /{parent_uri}/{slug}
 dated: false
 structure: true

@@ -10,4 +10,4 @@ fields:
 name | text | required
 email | text | required | input_type: email
 subject | text | optional
-message | textarea | required
+submission_message | textarea | required

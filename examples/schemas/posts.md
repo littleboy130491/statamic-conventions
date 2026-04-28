@@ -1,6 +1,8 @@
 schema_name: posts
 schema_type: collection
 title: Posts
+has_single: true
+has_archive: true
 route: /blog/{slug}
 dated: true
 structure: false

@@ -51,30 +51,3 @@ tabs:
               type: users
               display: Author
               max_items: 1
-  'SEO Meta':
-    display: 'SEO Meta'
-    sections:
-      -
-        fields:
-          -
-            handle: seo
-            field:
-              type: seo_pro
-              listable: false
-              display: SEO
-              localizable: false
-  'SEO Previews':
-    display: 'SEO Previews'
-    sections:
-      -
-        fields:
-          -
-            handle: seo_previews
-            field:
-              type: seo_pro_previews
-              listable: false
-              display: 'SEO Previews'
-              localizable: true
-              hide_display: true
-              unless:
-                seo.enabled: 'equals false'

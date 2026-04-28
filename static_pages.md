@@ -318,7 +318,7 @@ Understanding the difference between **layouts** and **templates** is fundamenta
 - Entries: `content/collections/pages/{site}/`
 - Trees: `content/trees/collections/{site}/`
 - Globals: `content/globals/{site}/`
-- Nav Trees: `content/trees/navigation/{site}/`
+- Nav Trees: `content/navigation/{site}/`
 
 **Shared across sites:**
 

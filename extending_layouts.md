@@ -9,7 +9,7 @@ The base `resources/views/layout.antlers.html` provides multiple injection point
 - [How Sections Work](#how-sections-work)
 - [Complete Example](#complete-example)
 - [Common Use Cases](#common-use-cases)
-- [SEO Pro Integration](#seo-pro-integration)
+- [SEO Integration](#seo-integration)
 - [Tips & Best Practices](#tips--best-practices)
 
 ---
@@ -603,9 +603,9 @@ container mx-auto px-4 max-w-3xl
 
 ---
 
-## SEO Pro Integration
+## SEO Integration
 
-The base layout includes `{{ seo_pro:meta }}` which automatically generates:
+Check `composer.json` before using addon-specific SEO tags. If `statamic/seo-pro` is installed, the base layout may include `{{ seo_pro:meta }}`, which automatically generates:
 
 - **Title tags** with fallbacks and customization
 - **Meta description** for search results
@@ -618,13 +618,13 @@ The base layout includes `{{ seo_pro:meta }}` which automatically generates:
 
 ### Configuration
 
-Configure SEO settings in:
+Configure SEO Pro settings in:
 - **Control Panel** > SEO Pro > Site Defaults
 - **Entry Blueprints** - Add SEO field tab to your blueprints
 
 ### Per-Entry SEO Fields
 
-Add this to your blueprint YAML to get SEO fields:
+Add this to your blueprint YAML to get SEO Pro fields only when the addon is installed:
 
 ```yaml
 -
@@ -663,7 +663,7 @@ Keep your sections DRY by using partials:
 ```
 
 ### 3. Check SEO Output
-View page source to ensure `{{ seo_pro:meta }}` is generating the expected meta tags.
+View page source to ensure the project's SEO implementation is generating the expected meta tags. If SEO Pro is installed, verify `{{ seo_pro:meta }}` output; otherwise verify the ordinary meta fields rendered by the layout.
 
 ### 4. Layer Templates
 You can extend templates that extend other templates:
@@ -741,5 +741,5 @@ The native approach (using sections) works well for most sites where you control
 ## Related Documentation
 
 - [Statamic Antlers Templates](https://statamic.dev/antlers)
-- [SEO Pro Documentation](https://statamic.dev/addons/seo-pro)
+- [SEO Pro Documentation](https://statamic.com/addons/statamic/seo-pro/docs)
 - [Partials in Statamic](https://statamic.dev/tags/partial)

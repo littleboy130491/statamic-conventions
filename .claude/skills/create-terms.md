@@ -27,7 +27,7 @@ If the task requires changes outside the allowed paths, stop and inform the user
 ## Quick Start
 
 1. **Verify taxonomy exists** — Read `content/taxonomies/{taxonomy}.yaml` (read only). If it does not exist, ask the user whether to create it using the `create-taxonomies` skill
-2. **Check schema (if available)** — Read `schemas/{taxonomy}.md` (read only) to check `has_single`. Note: Terms are always created regardless of `has_single` — they exist as data even if the taxonomy has no public term pages.
+2. **Check schema (if available)** — Read `schemas/{taxonomy}.md` (read only) to check taxonomy view flags such as `has_show`. Note: Terms are always created regardless of public view settings — they exist as data even if the taxonomy has no public term pages.
 3. **Read the blueprint** — Read the blueprint at `resources/blueprints/taxonomies/{taxonomy}/{blueprint}.yaml` (read only). If no specific blueprint exists, terms use `title` only
 4. Create `.yaml` term files
 5. **Multisite only** — For adding translations to terms, use the `create-translations-terms` skill

@@ -73,11 +73,11 @@ Each tree item uses the format: `{Label} | {type} | {reference}`
 |------|-----------------|-------------|
 | `entry` | `{collection}/{slug}` | Links to a Statamic entry. Downstream skill resolves the UUID. |
 | `archive` | `{collection}` | Links to a collection's mounted archive page (e.g., `/blog`). Downstream skill resolves the mount entry UUID. |
-| `term` | `{taxonomy}/{slug}` | Links to a taxonomy term page. Downstream skill resolves the URL from the taxonomy's route config. |
+| `term` | `{taxonomy}/{slug}` | Links to a taxonomy term page. Downstream skill derives the global URL from the taxonomy handle and term slug. |
 | `link` | `{url}` | External or hardcoded URL. |
 | `text` | _(omit)_ | Non-clickable label, typically a section header with children. |
 
-**Why `term` is a `link` under the hood:** Statamic's navigation system only supports entries, hardcoded URLs, and text natively — it does NOT support taxonomy terms as a node type ([open feature request](https://github.com/statamic/ideas/issues/581)). The `term` type in this schema is a convenience that tells the downstream skill to look up the term's URL from the taxonomy route config and generate a hardcoded `link` node. This way you don't have to manually figure out the URL.
+**Why `term` is a `link` under the hood:** Statamic's navigation system only supports entries, hardcoded URLs, and text natively — it does NOT support taxonomy terms as a node type ([open feature request](https://github.com/statamic/ideas/issues/581)). The `term` type in this schema is a convenience that tells the downstream skill to generate a hardcoded `link` node using Statamic's taxonomy URL convention. This way you don't have to manually figure out the URL.
 
 ### Tree Indentation
 
@@ -195,7 +195,7 @@ tree:
 - Contact | entry | pages/contact
 ```
 
-The downstream skill reads the taxonomy route from `content/taxonomies/categories.yaml` (e.g., `/categories/{slug}`) and generates hardcoded URL links like `/categories/news`.
+The downstream skill derives hardcoded URL links from the taxonomy handle and term slug, such as `categories/news` → `/categories/news`.
 
 ### Nav with External Links
 

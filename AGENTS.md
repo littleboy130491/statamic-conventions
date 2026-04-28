@@ -5,7 +5,7 @@ This document is a routing guide for which skills to use and when. Each skill fi
 ## General Project Rules
 
 - **Statamic 6** — This is a Statamic 6 project. When unsure about APIs or conventions, check the Statamic docs at `statamic.dev` and verify the installed version via `composer.json`.
-- **Check addons** — Before creating blueprints or views, check `composer.json` for installed addons (SEO Pro, Bard, etc.) that may affect field types or template tags.
+- **Check addons** — Before creating blueprints or views, check `composer.json` for installed addons (for example SEO Pro) that may affect field types or template tags. Do not assume paid addons are installed.
 - **Antlers by default** — Use `.antlers.html` for all view templates unless the user explicitly requests Blade (`.blade.php`).
 - **Tailwind CSS + Vite** — Frontend uses Tailwind CSS for styling and Vite for asset bundling.
 - **Detect multisite first** — Always read `resources/sites.yaml` before creating any content. If multisite, include `sites`, `propagate`, and `localizable` fields where required.

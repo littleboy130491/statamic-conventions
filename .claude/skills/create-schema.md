@@ -142,7 +142,7 @@ featured_posts | entries | optional | | collections: blog_posts, max_items: 3
 
 ### Taxonomy Schema
 
-Taxonomies do NOT have routes — Statamic handles taxonomy routing automatically. Term URLs are defined by the taxonomy's own route (`/{taxonomy-slug}/{term-slug}`) and by each collection's route configuration for collection-scoped term pages.
+Taxonomies do NOT have routes — Statamic handles taxonomy routing automatically when matching view files exist. Global term URLs follow `/{taxonomy-slug}/{term-slug}`, and collection-scoped term URLs are derived from the collection route plus the taxonomy and term slugs.
 
 ```
 schema_name: {handle}
@@ -271,7 +271,7 @@ fields:
 name | text | required
 email | text | required | input_type: email
 subject | select | required | options: general, support, sales
-message | textarea | required
+submission_message | textarea | required
 ```
 
 ### Navigation Schema

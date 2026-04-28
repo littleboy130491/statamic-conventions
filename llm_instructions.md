@@ -150,7 +150,7 @@ content/globals/site_settings.yaml          # Config + data with data: key
 | Entries | `content/collections/{collection}/{entry}.md` | `content/collections/{collection}/{site}/{entry}.md` |
 | Collection Trees | `content/trees/collections/{collection}.yaml` | `content/trees/collections/{collection}/{site}.yaml` |
 | Taxonomy Terms | `content/taxonomies/{taxonomy}/{term}.yaml` | `content/taxonomies/{taxonomy}/{site}/{term}.yaml` |
-| Navigation Trees | `content/trees/navigation/{nav}.yaml` | `content/trees/navigation/{site}/{nav}.yaml` |
+| Navigation Trees | `content/trees/navigation/{nav}.yaml` | `content/navigation/{site}/{nav}.yaml` |
 | Global Data | `content/globals/{global}.yaml` (with `data:` key) | `content/globals/{site}/{global}.yaml` (no `data:` key) |
 
 **Paths that DON'T change (shared across sites):**
@@ -203,7 +203,7 @@ ls content/collections/pages/
 | Document | File | Covers |
 | --- | --- | --- |
 | File Structure | `file_structure.md` | File paths, folder organization, naming conventions |
-| Extending Layouts | `extending_layouts.md` | Layout hooks, contextual body classes, template extension, SEO Pro integration |
+| Extending Layouts | `extending_layouts.md` | Layout hooks, contextual body classes, template extension, SEO integration |
 | Static Pages | `static_pages.md` | Pages collection, page templates, page hierarchy |
 | Collections | `collections.md` | Content collections (blog, products, etc.), routing, mounting |
 | Taxonomies | `taxonomies.md` | Categories, tags, terms, taxonomy relationships |
@@ -254,7 +254,7 @@ ls content/collections/pages/
 - Customizing body classes for styling hooks
 - Implementing header, footer, or navigation in templates
 - Understanding contextual body classes (WordPress-style)
-- Using SEO Pro meta tags
+- Using SEO/meta tags
 - Overriding default wrapper or body styling
 - Adding analytics or tracking code
 
@@ -281,7 +281,7 @@ ls content/collections/pages/
 
 - **Contextual Body Classes** - Automatic WordPress-style classes (entry-{collection}, slug-{slug}, homepage, etc.)
 - **Template Hooks** - 10+ injection points (head, styles, scripts, before/after content, etc.)
-- **SEO Pro Integration** - Automatic meta tags, OG tags, JSON-LD
+- **SEO Integration** - SEO Pro when installed, or normal blueprint fields/layout tags otherwise
 - **Native Statamic Only** - Uses only `{{ yield }}/{{ section }}` (no addons required)
 
 **Often combined with:**
@@ -791,10 +791,10 @@ Before writing any Statamic code or configuration:
 2. **Blueprint handles must match content handles** — Form blueprint handle = form handle, nav blueprint handle = nav handle
 3. **Partials use underscore prefix** — Filename: `_name.antlers.html`, reference: `{{ partial:name }}`
 4. **Multisite changes content paths** — Content goes in `{site}/` subdirectories, config files stay shared
-5. **Globals single vs multisite differ** — Single site has `data:` wrapper, multisite site files don't
+5. **Globals store metadata and data separately** — `content/globals/{handle}.yaml` stores set metadata; `content/globals/{site}/{handle}.yaml` stores values without a `data:` wrapper
 6. **Collections can be mounted** — Creating URL hierarchy by mounting to pages
 7. **Taxonomies attach to collections** — Configure in collection yaml, not taxonomy yaml
-8. **ALWAYS use SEO Pro addon for SEO** — Never create custom SEO fields (meta title, meta description, OG tags, etc.). Use the SEO Pro Statamic addon for all SEO-related functionality
+8. **Check addons before SEO work** — Use SEO Pro only when `statamic/seo-pro` is installed; otherwise use normal blueprint fields or the existing layout's SEO approach
 9. **Contextual body classes are automatic** — The layout adds WordPress-style classes (entry-{collection}, slug-{slug}, etc.) automatically; use these for CSS targeting
 10. **Use native Statamic tags only** — Layout uses `{{ yield }}/{{ section }}` (native); `{{ push }}/{{ stack }}` require addons
 11. **Layout hooks pattern** — Use `{{ section:name }}...{{ /section:name }}` in templates, `{{ yield:name }}` in layout; sections don't accumulate (last wins)
